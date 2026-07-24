@@ -1,0 +1,1398 @@
+<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Junglab 대시보드</title></head><body><style>
+  :root { --bg:#0f1420; --card:#1a2233; --line:#2a3550; --fg:#e7ecf5; --mut:#8a97b3;
+           --inc:#1f6f4a; --exc:#7a2e2e; --accent:#5aa0ff; --btn:#232d43; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--fg);
+          font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Apple SD Gothic Neo",sans-serif; }
+  .wrap { max-width:900px; margin:0 auto; padding:20px 18px 60px; }
+  .sub-h { color:var(--mut); font-size:13px; }
+  .nav { position:sticky; top:0; z-index:10; background:rgba(15,20,32,.92);
+          backdrop-filter:blur(8px); border-bottom:1px solid var(--line); }
+  .nav-in { max-width:900px; margin:0 auto; padding:0 18px; display:flex; flex-wrap:wrap;
+             align-items:center; gap:6px 16px; min-height:54px; }
+  .brand { font-size:16px; font-weight:700; }
+  .nav-menu { display:flex; gap:4px; }
+  .navbtn { font:inherit; font-size:14px; color:var(--mut); background:none; border:none;
+             padding:8px 12px; border-radius:8px; cursor:pointer; }
+  .navbtn:hover { color:var(--fg); background:var(--btn); }
+  .navbtn[aria-pressed="true"] { color:var(--fg); background:var(--btn); font-weight:600; }
+  .navbtn:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
+  .nav-cd { margin-left:auto; font-size:13px; color:var(--accent); font-variant-numeric:tabular-nums; }
+  .page[hidden] { display:none; }
+  section { margin-top:22px; }
+  h2 { font-size:13px; text-transform:uppercase; letter-spacing:.05em; color:var(--mut); margin:0 0 10px; }
+  .chips { display:flex; flex-wrap:wrap; gap:6px; }
+  .chip { font-size:12.5px; padding:3px 9px; border-radius:999px; border:1px solid var(--line); }
+  .chip.inc { background:var(--inc); border-color:transparent; }
+  .chip.exc { background:var(--exc); border-color:transparent; }
+  .muted { color:var(--mut); font-size:13px; }
+  .kwn { color:var(--mut); font-weight:400; }
+  .chips.clamped { max-height:28px; overflow:hidden; }  /* 한 줄만 */
+  .chips.expanded { max-height:none; }
+  .kw-toggle { margin-top:8px; font:inherit; font-size:12px; color:var(--accent);
+                background:none; border:none; cursor:pointer; padding:2px 0; }
+  .kw-toggle:hover { text-decoration:underline; }
+  .kw-toggle:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
+  .sortbar { display:flex; flex-wrap:wrap; align-items:center; gap:8px; margin-bottom:12px; }
+  .sortbar .lbl { color:var(--mut); font-size:12px; }
+  .sortbtn { font:inherit; font-size:12.5px; color:var(--fg); background:var(--btn);
+              border:1px solid var(--line); border-radius:7px; padding:5px 11px; cursor:pointer; }
+  .sortbtn:hover { border-color:var(--accent); }
+  .sortbtn[aria-pressed="true"] { background:var(--accent); border-color:transparent; color:#08101f; font-weight:600; }
+  .sortbtn:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
+  .tablewrap { overflow-x:auto; border:1px solid var(--line); border-radius:10px; }
+  table { border-collapse:collapse; width:100%; min-width:520px; }
+  thead th { text-align:left; font-size:11px; text-transform:uppercase; letter-spacing:.04em;
+              color:var(--mut); font-weight:600; padding:10px 14px; border-bottom:1px solid var(--line); }
+  thead th.col-date { text-align:right; width:110px; }
+  tbody td { padding:11px 14px; border-bottom:1px solid var(--line); vertical-align:top; }
+  tbody tr:last-child td { border-bottom:none; }
+  .c-title a { color:var(--fg); font-weight:600; text-decoration:none; font-size:14.5px; line-height:1.35; }
+  .c-title a:hover { color:var(--accent); }
+  .c-title .sub { color:var(--mut); font-size:12.5px; margin-top:4px; }
+  .c-dl, .c-pd { text-align:right; white-space:nowrap; font-variant-numeric:tabular-nums; font-size:13px; }
+  thead th.col-src { width:132px; }
+  .c-src { white-space:nowrap; }
+  .src-badge { font-size:12px; color:var(--mut); background:var(--btn); border:1px solid var(--line);
+                border-radius:6px; padding:2px 8px; }
+  thead th.col-tag { width:88px; white-space:nowrap; }
+  thead th.col-remain { text-align:right; width:92px; }
+  .c-tag { color:var(--mut); font-size:13px; white-space:nowrap; }
+  .c-dl2 { text-align:right; white-space:nowrap; color:var(--fg); font-weight:600;
+            font-size:13px; font-variant-numeric:tabular-nums; }
+  .c-remain { text-align:right; white-space:nowrap; font-size:13px; font-weight:600;
+               font-variant-numeric:tabular-nums; color:var(--accent); }
+  .c-remain.due-today { color:#f06b6b; }
+  .c-remain.expired { color:var(--mut); font-weight:400; }
+  .rc-controls { display:flex; flex-wrap:wrap; align-items:center; gap:8px; margin-bottom:12px; }
+  .rc-sel { font:inherit; font-size:12.5px; color:var(--fg); background:var(--btn);
+             border:1px solid var(--line); border-radius:7px; padding:5px 9px; cursor:pointer; }
+  .rc-sel:hover { border-color:var(--accent); }
+  .rc-sel:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
+  .rc-sortlbl { color:var(--mut); font-size:12px; margin-left:6px; }
+  .c-dl { color:var(--fg); font-weight:600; }
+  .c-pd { color:var(--mut); }
+  tr.past .c-dl { text-decoration:line-through; color:var(--mut); font-weight:400; }  /* 마감 지남 */
+  .empty { color:var(--mut); padding:22px; text-align:center; }
+  .tabbar { display:flex; gap:8px; margin-bottom:12px; border-bottom:1px solid var(--line); }
+  .tabbtn { font:inherit; font-size:13.5px; color:var(--mut); background:none; border:none;
+             border-bottom:2px solid transparent; padding:8px 4px; margin-bottom:-1px; cursor:pointer; }
+  .tabbtn:hover { color:var(--fg); }
+  .tabbtn[aria-pressed="true"] { color:var(--fg); border-bottom-color:var(--accent); font-weight:600; }
+  .tabbtn:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
+  .tabn { font-variant-numeric:tabular-nums; color:var(--mut); font-size:12px; margin-left:3px; }
+  .tabbtn[aria-pressed="true"] .tabn { color:var(--accent); }
+  .pager { display:flex; align-items:center; justify-content:center; gap:14px; margin-top:14px; }
+  .pgbtn { font:inherit; font-size:13px; color:var(--fg); background:var(--btn); border:1px solid var(--line);
+            border-radius:7px; padding:6px 14px; cursor:pointer; }
+  .pgbtn:hover:not(:disabled) { border-color:var(--accent); }
+  .pgbtn:disabled { opacity:.4; cursor:default; }
+  .pgbtn:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
+  .pginfo { color:var(--mut); font-size:13px; font-variant-numeric:tabular-nums; }
+  /* --- 분석 페이지 --- */
+  .an-lead { margin:2px 0 18px; color:var(--mut); font-size:13px; }
+  .an-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; align-items:start; }
+  .an-card { margin-top:0; border:1px solid var(--line); border-radius:12px; padding:16px 18px; background:var(--card); }
+  .an-grid + .an-card { margin-top:16px; }   /* space only before the month card, NOT between the two grid cards */
+  .an-card h2 { margin:0 0 2px; }
+  .an-total { color:var(--mut); font-weight:400; font-size:13px; }
+  /* reserve 2 lines so a wrapping caption in one card can't push its donut out of line with the other */
+  .an-cap { margin:0 0 14px; color:var(--mut); font-size:12px; line-height:1.4; min-height:2.8em; }
+  /* donut centered on top, legend full-width below — same in both cards so
+     they line up regardless of how long the labels (e.g. 기관명) are. */
+  .chart { display:flex; flex-direction:column; align-items:center; gap:14px; }
+  .donut-wrap { flex:0 0 auto; }
+  .donut { display:block; }
+  .legend { width:100%; list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:7px; }
+  .legend li { display:flex; align-items:center; gap:8px; font-size:13px; }
+  .legend .sw { width:11px; height:11px; border-radius:3px; flex:0 0 auto; }
+  .legend .lg-l { flex:1 1 auto; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .legend .lg-n { color:var(--mut); font-variant-numeric:tabular-nums; flex:0 0 auto; }
+  .bars { display:flex; align-items:flex-end; gap:10px; overflow-x:auto; padding-top:4px; }
+  .bar-col { flex:1 0 34px; display:flex; flex-direction:column; align-items:center; }
+  .bar-track { width:100%; max-width:46px; height:132px; display:flex; align-items:flex-end; }
+  .bar-v { width:100%; background:var(--accent); border-radius:5px 5px 0 0; min-height:6px; }
+  .bar-n { margin-top:6px; font-size:12px; font-weight:600; font-variant-numeric:tabular-nums; }
+  .bar-x { margin-top:2px; font-size:11px; color:var(--mut); font-variant-numeric:tabular-nums; }
+  @media (max-width:600px) { .an-grid { grid-template-columns:1fr; } }
+  footer { margin-top:30px; color:var(--mut); font-size:12px; text-align:center; }
+</style>
+<nav class="nav">
+  <div class="nav-in">
+    <span class="brand">📢 Junglab 대시보드</span>
+    <div class="nav-menu">
+      <button class="navbtn" data-page="grants" aria-pressed="true">공고</button>
+      <button class="navbtn" data-page="news" aria-pressed="false">뉴스</button>
+      <button class="navbtn" data-page="events" aria-pressed="false">행사</button>
+      <button class="navbtn" data-page="recruit" aria-pressed="false">채용</button>
+      <button class="navbtn" data-page="analysis" aria-pressed="false">분석</button>
+    </div>
+    <span class="nav-cd">다음 조회 <b id="cd">–</b></span>
+  </div>
+</nav>
+<div class="wrap">
+  <div class="page" id="page-grants">
+  <div class="sub-h">전송 이력 26건 · 갱신 2026-07-24 20:03 KST · 다음 예정 <span id="next">07/27 09:00</span> KST</div>
+
+  <section>
+    <h2>적용 키워드 — 허용 <span class="kwn">(35)</span></h2>
+    <div class="chips clamped" id="inc-chips"><span class="chip inc">유전체</span><span class="chip inc">유전자</span><span class="chip inc">오믹스</span><span class="chip inc">단백체</span><span class="chip inc">프로테오믹스</span><span class="chip inc">바이오마커</span><span class="chip inc">감염</span><span class="chip inc">패혈증</span><span class="chip inc">역학</span><span class="chip inc">코호트</span><span class="chip inc">감염병</span><span class="chip inc">정밀의료</span><span class="chip inc">바이오</span><span class="chip inc">보건의료</span><span class="chip inc">의료데이터</span><span class="chip inc">데이터</span><span class="chip inc">인공지능</span><span class="chip inc">디지털헬스</span><span class="chip inc">연구실</span><span class="chip inc">인프라</span><span class="chip inc">구축</span><span class="chip inc">지원금</span><span class="chip inc">개인기초</span><span class="chip inc">연구장려금</span><span class="chip inc">백신</span><span class="chip inc">신약</span><span class="chip inc">의료기기</span><span class="chip inc">임상</span><span class="chip inc">재생의료</span><span class="chip inc">의약</span><span class="chip inc">진단</span><span class="chip inc">휴먼프론티어과학프로그램</span><span class="chip inc">HFSP</span><span class="chip inc">협력사업</span><span class="chip inc">인재양성</span></div>
+    <button class="kw-toggle" data-target="inc-chips" hidden>전체 보기</button>
+  </section>
+  <section>
+    <h2>적용 키워드 — 제외 <span class="kwn">(6)</span></h2>
+    <div class="chips clamped" id="exc-chips"><span class="chip exc">채용</span><span class="chip exc">입찰</span><span class="chip exc">물품구매</span><span class="chip exc">시설공사</span><span class="chip exc">우주</span><span class="chip exc">항해</span></div>
+    <button class="kw-toggle" data-target="exc-chips" hidden>전체 보기</button>
+  </section>
+
+  <section>
+    <h2>수집한 공고</h2>
+    <div class="tabbar" id="tabbar">
+      <button class="tabbtn" data-tab="upcoming" aria-pressed="true">지원 가능 공고<span class="tabn" id="cnt-upcoming">0</span></button>
+      <button class="tabbtn" data-tab="past" aria-pressed="false">지난 공고<span class="tabn" id="cnt-past">0</span></button>
+    </div>
+    <div class="sortbar">
+      <span class="lbl">정렬</span>
+      <button class="sortbtn" data-sort="deadline">마감 임박순</button>
+      <button class="sortbtn" data-sort="posted">공고일 최신순</button>
+      <button class="sortbtn" data-sort="seen">수집 최신순</button>
+    </div>
+    <div class="tablewrap">
+      <table>
+        <thead><tr>
+          <th>공고</th>
+          <th class="col-date">마감일</th>
+          <th class="col-date">공고일</th>
+        </tr></thead>
+        <tbody id="rows">
+<tr data-deadline="20260901" data-posted="20260721" data-seen="1784770060">
+  <td class="c-title">
+    <a href="https://www.ntis.go.kr/rndgate/eg/un/ra/view.do?roRndUid=1274148" target="_blank" rel="noopener">무인수상정 항해/항법 센서 데이터 학습 시스템</a>
+    <div class="sub">국방과학연구소 · 수집 2026-07-23</div>
+  </td>
+  <td class="c-dl">2026-09-01</td>
+  <td class="c-pd">2026.07.21</td>
+</tr>
+<tr data-deadline="20260731" data-posted="20260630" data-seen="1784547887">
+  <td class="c-title">
+    <a href="https://www.ntis.go.kr/rndgate/eg/un/ra/view.do?roRndUid=1272232" target="_blank" rel="noopener">2026년 휴먼프론티어과학프로그램(HFSP) 협력사업(사전지원) 신규과제 공고</a>
+    <div class="sub">한국연구재단 · 수집 2026-07-20</div>
+  </td>
+  <td class="c-dl">2026-07-31</td>
+  <td class="c-pd">2026.06.30</td>
+</tr>
+<tr data-deadline="20260904" data-posted="20260610" data-seen="1784547887">
+  <td class="c-title">
+    <a href="https://www.ntis.go.kr/rndgate/eg/un/ra/view.do?roRndUid=1273318" target="_blank" rel="noopener">2027년도 한-일(JSPS) 협력사업 신규과제 공모(협력연구·공동세미나)</a>
+    <div class="sub">한국연구재단 · 수집 2026-07-20</div>
+  </td>
+  <td class="c-dl">2026-09-04</td>
+  <td class="c-pd">2026.06.10</td>
+</tr>
+<tr data-deadline="20260710" data-posted="20260610" data-seen="1784547887">
+  <td class="c-title">
+    <a href="https://www.ntis.go.kr/rndgate/eg/un/ra/view.do?roRndUid=1270019" target="_blank" rel="noopener">2026년도 우주기술혁신인재양성(R&amp;D)사업[우주항공 글로벌 인력양성 및 활용] 추가공고</a>
+    <div class="sub">우주항공청 · 수집 2026-07-20</div>
+  </td>
+  <td class="c-dl">2026-07-10</td>
+  <td class="c-pd">2026.06.10</td>
+</tr>
+<tr data-deadline="20260720" data-posted="20260710" data-seen="1784101971">
+  <td class="c-title">
+    <a href="https://www.ntis.go.kr/rndgate/eg/un/ra/view.do?roRndUid=1273371" target="_blank" rel="noopener">2026년도 제2차 백신실용화기술개발사업단 신규지원 대상과제 재공고</a>
+    <div class="sub">한국보건산업진흥원 · 수집 2026-07-15</div>
+  </td>
+  <td class="c-dl">2026-07-20</td>
+  <td class="c-pd">2026.07.10</td>
+</tr>
+<tr data-deadline="20260709" data-posted="20260701" data-seen="1784101971">
+  <td class="c-title">
+    <a href="https://www.ntis.go.kr/rndgate/eg/un/ra/view.do?roRndUid=1272999" target="_blank" rel="noopener">2026년도 제2차 범부처 첨단 의료기기 연구개발사업 신규지원 대상과제 재공고</a>
+    <div class="sub">범부처의료기기연구개발사업단 · 수집 2026-07-15</div>
+  </td>
+  <td class="c-dl">2026-07-09</td>
+  <td class="c-pd">2026.07.01</td>
+</tr>
+<tr data-deadline="20260710" data-posted="20260701" data-seen="1784101971">
+  <td class="c-title">
+    <a href="https://www.ntis.go.kr/rndgate/eg/un/ra/view.do?roRndUid=1272698" target="_blank" rel="noopener">2026년 제2차 범부처 첨단 의료기기 연구개발사업 신규지원 대상과제 재공고_(2026)[2내역] 의료기기 코어기술 및 제품 개발</a>
+    <div class="sub">재단법인 범부처의료기기연구개발사업단 · 수집 2026-07-15</div>
+  </td>
+  <td class="c-dl">2026-07-10</td>
+  <td class="c-pd">2026.07.01</td>
+</tr>
+<tr data-deadline="20260710" data-posted="20260611" data-seen="1784101971">
+  <td class="c-title">
+    <a href="https://www.ntis.go.kr/rndgate/eg/un/ra/view.do?roRndUid=1270087" target="_blank" rel="noopener">2026년도 제2차 백신실용화기술개발사업단 신규지원 대상과제 공고</a>
+    <div class="sub">한국보건산업진흥원 · 수집 2026-07-15</div>
+  </td>
+  <td class="c-dl">2026-07-10</td>
+  <td class="c-pd">2026.06.11</td>
+</tr>
+<tr data-deadline="20260710" data-posted="20260610" data-seen="1784101971">
+  <td class="c-title">
+    <a href="https://www.ntis.go.kr/rndgate/eg/un/ra/view.do?roRndUid=1270088" target="_blank" rel="noopener">2026년도 제3차 첨단재생의료 임상연구 활성화 지원 사업 신규과제 공고_1. [일반형] 첨단재생의료 임상연구 지원</a>
+    <div class="sub">한국보건산업진흥원 · 수집 2026-07-15</div>
+  </td>
+  <td class="c-dl">2026-07-10</td>
+  <td class="c-pd">2026.06.10</td>
+</tr>
+<tr data-deadline="20260617" data-posted="20260608" data-seen="1784101971">
+  <td class="c-title">
+    <a href="https://www.ntis.go.kr/rndgate/eg/un/ra/view.do?roRndUid=1269671" target="_blank" rel="noopener">팬데믹 대비 mRNA 백신 개발 지원사업 대상과제 공고</a>
+    <div class="sub">한국보건산업진흥원 · 수집 2026-07-15</div>
+  </td>
+  <td class="c-dl">2026-06-17</td>
+  <td class="c-pd">2026.06.08</td>
+</tr>
+<tr data-deadline="20260701" data-posted="20260604" data-seen="1784101971">
+  <td class="c-title">
+    <a href="https://www.ntis.go.kr/rndgate/eg/un/ra/view.do?roRndUid=1269306" target="_blank" rel="noopener">2026년도 제2차 국가신약개발사업 신규지원 대상과제 통합공고</a>
+    <div class="sub">한국보건산업진흥원 · 수집 2026-07-15</div>
+  </td>
+  <td class="c-dl">2026-07-01</td>
+  <td class="c-pd">2026.06.04</td>
+</tr>
+<tr data-deadline="20260701" data-posted="20260601" data-seen="1784101971">
+  <td class="c-title">
+    <a href="https://www.ntis.go.kr/rndgate/eg/un/ra/view.do?roRndUid=1268724" target="_blank" rel="noopener">2026년 제2차 국가신약개발사업 신규지원 대상과제 통합공고_(2026)신약 임상개발</a>
+    <div class="sub">재단법인 국가신약개발재단 · 수집 2026-07-15</div>
+  </td>
+  <td class="c-dl">2026-07-01</td>
+  <td class="c-pd">2026.06.01</td>
+</tr>
+<tr data-deadline="20260701" data-posted="20260601" data-seen="1784101971">
+  <td class="c-title">
+    <a href="https://www.ntis.go.kr/rndgate/eg/un/ra/view.do?roRndUid=1268722" target="_blank" rel="noopener">2026년 제2차 국가신약개발사업 신규지원 대상과제 통합공고_(2026)신약 기반 확충 연구</a>
+    <div class="sub">재단법인 국가신약개발재단 · 수집 2026-07-15</div>
+  </td>
+  <td class="c-dl">2026-07-01</td>
+  <td class="c-pd">2026.06.01</td>
+</tr>
+<tr data-deadline="20260630" data-posted="20260529" data-seen="1784101971">
+  <td class="c-title">
+    <a href="https://www.ntis.go.kr/rndgate/eg/un/ra/view.do?roRndUid=1269892" target="_blank" rel="noopener">2026년도 제2차 범부처 첨단 의료기기 연구개발사업 신규지원 대상과제  공고_(2026)[3내역] 의료현장 진입 역량 강화</a>
+    <div class="sub">재단법인 범부처의료기기연구개발사업단 · 수집 2026-07-15</div>
+  </td>
+  <td class="c-dl">2026-06-30</td>
+  <td class="c-pd">2026.05.29</td>
+</tr>
+<tr data-deadline="20260630" data-posted="20260529" data-seen="1784101971">
+  <td class="c-title">
+    <a href="https://www.ntis.go.kr/rndgate/eg/un/ra/view.do?roRndUid=1269891" target="_blank" rel="noopener">2026년도 제2차 범부처 첨단 의료기기 연구개발사업 신규지원 대상과제  공고_(2026)[2내역] 의료기기 코어기술 및 제품 개발</a>
+    <div class="sub">재단법인 범부처의료기기연구개발사업단 · 수집 2026-07-15</div>
+  </td>
+  <td class="c-dl">2026-06-30</td>
+  <td class="c-pd">2026.05.29</td>
+</tr>
+<tr data-deadline="20260630" data-posted="20260529" data-seen="1784101971">
+  <td class="c-title">
+    <a href="https://www.ntis.go.kr/rndgate/eg/un/ra/view.do?roRndUid=1268725" target="_blank" rel="noopener">2026년도 제2차 범부처 첨단 의료기기 연구개발사업 신규지원 대상과제  공고_(2026)[1내역] 글로벌 플래그십 의료기기 개발</a>
+    <div class="sub">재단법인 범부처의료기기연구개발사업단 · 수집 2026-07-15</div>
+  </td>
+  <td class="c-dl">2026-06-30</td>
+  <td class="c-pd">2026.05.29</td>
+</tr>
+<tr data-deadline="20260701" data-posted="20260601" data-seen="1784099729">
+  <td class="c-title">
+    <a href="https://www.ntis.go.kr/rndgate/eg/un/ra/view.do?roRndUid=1268723" target="_blank" rel="noopener">2026년 제2차 국가신약개발사업 신규지원 대상과제 통합공고_(2026)신약 R&amp;D 생태계 구축 연구</a>
+    <div class="sub">재단법인 국가신약개발재단 · 수집 2026-07-15</div>
+  </td>
+  <td class="c-dl">2026-07-01</td>
+  <td class="c-pd">2026.06.01</td>
+</tr>
+<tr data-deadline="20260622" data-posted="20260522" data-seen="1784099729">
+  <td class="c-title">
+    <a href="https://www.ntis.go.kr/rndgate/eg/un/ra/view.do?roRndUid=1267959" target="_blank" rel="noopener">2026년도 3차 산업혁신기반구축사업 시행계획 공고</a>
+    <div class="sub">한국산업기술진흥원 · 수집 2026-07-15</div>
+  </td>
+  <td class="c-dl">2026-06-22</td>
+  <td class="c-pd">2026.05.22</td>
+</tr>
+<tr data-deadline="20260804" data-posted="20260703" data-seen="1784096024">
+  <td class="c-title">
+    <a href="https://www.ntis.go.kr/rndgate/eg/un/ra/view.do?roRndUid=1272702" target="_blank" rel="noopener">2026년도 인공지능혁신인재양성 2차 사업 공고</a>
+    <div class="sub">정보통신기획평가원 · 수집 2026-07-15</div>
+  </td>
+  <td class="c-dl">2026-08-04</td>
+  <td class="c-pd">2026.07.03</td>
+</tr>
+<tr data-deadline="20260722" data-posted="20260622" data-seen="1784096024">
+  <td class="c-title">
+    <a href="https://www.ntis.go.kr/rndgate/eg/un/ra/view.do?roRndUid=1273071" target="_blank" rel="noopener">2026년도 중소기업기술혁신개발사업 글로벌선도기술개발(수출지향형) 바이오헬스 추천기업 대상 연구개발계획서 제출 안내</a>
+    <div class="sub">중소기업기술정보진흥원 · 수집 2026-07-15</div>
+  </td>
+  <td class="c-dl">2026-07-22</td>
+  <td class="c-pd">2026.06.22</td>
+</tr>
+<tr data-deadline="20260713" data-posted="20260612" data-seen="1784096024">
+  <td class="c-title">
+    <a href="https://www.ntis.go.kr/rndgate/eg/un/ra/view.do?roRndUid=1270450" target="_blank" rel="noopener">바이오·의료기술개발 사업 신규과제 제5차 공모_(2026)</a>
+    <div class="sub">한국연구재단 · 수집 2026-07-15</div>
+  </td>
+  <td class="c-dl">2026-07-13</td>
+  <td class="c-pd">2026.06.12</td>
+</tr>
+<tr data-deadline="20260714" data-posted="20260611" data-seen="1784096024">
+  <td class="c-title">
+    <a href="https://www.ntis.go.kr/rndgate/eg/un/ra/view.do?roRndUid=1270271" target="_blank" rel="noopener">2026년도 소부장분야 전문인력양성(데이터융합형 신소재 고급인력양성) 신규과제 공모</a>
+    <div class="sub">한국연구재단 · 수집 2026-07-15</div>
+  </td>
+  <td class="c-dl">2026-07-14</td>
+  <td class="c-pd">2026.06.11</td>
+</tr>
+<tr data-deadline="20260610" data-posted="20260601" data-seen="1784096024">
+  <td class="c-title">
+    <a href="https://www.ntis.go.kr/rndgate/eg/un/ra/view.do?roRndUid=1268854" target="_blank" rel="noopener">2026년도 바이오·의료기술개발 사업 제4차 신규과제 재공모</a>
+    <div class="sub">한국연구재단 · 수집 2026-07-15</div>
+  </td>
+  <td class="c-dl">2026-06-10</td>
+  <td class="c-pd">2026.06.01</td>
+</tr>
+<tr data-deadline="20260629" data-posted="20260528" data-seen="1784096024">
+  <td class="c-title">
+    <a href="https://www.ntis.go.kr/rndgate/eg/un/ra/view.do?roRndUid=1269599" target="_blank" rel="noopener">2026년도 제2차 바이오헬스분야 연구개발사업 신규지원 대상과제 통합 공고</a>
+    <div class="sub">한국산업기술기획평가원 · 수집 2026-07-15</div>
+  </td>
+  <td class="c-dl">2026-06-29</td>
+  <td class="c-pd">2026.05.28</td>
+</tr>
+<tr data-deadline="20260608" data-posted="20260527" data-seen="1784096024">
+  <td class="c-title">
+    <a href="https://www.ntis.go.kr/rndgate/eg/un/ra/view.do?roRndUid=1268601" target="_blank" rel="noopener">2026년도 제2차 감염병 예방·치료기술개발사업 신규지원 대상과제 재공고_(2026)(RFP 1) 미해결 치료제 도전 기술개발</a>
+    <div class="sub">한국보건산업진흥원 · 수집 2026-07-15</div>
+  </td>
+  <td class="c-dl">2026-06-08</td>
+  <td class="c-pd">2026.05.27</td>
+</tr>
+<tr data-deadline="20260608" data-posted="20260527" data-seen="1784096024">
+  <td class="c-title">
+    <a href="https://www.ntis.go.kr/rndgate/eg/un/ra/view.do?roRndUid=1268332" target="_blank" rel="noopener">2026년도 제2차 감염병 예방·치료 기술개발사업 신규지원 대상과제 재공고</a>
+    <div class="sub">한국보건산업진흥원 · 수집 2026-07-15</div>
+  </td>
+  <td class="c-dl">2026-06-08</td>
+  <td class="c-pd">2026.05.27</td>
+</tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="pager" id="pager" style="display:none">
+      <button class="pgbtn" id="pg-prev">이전</button>
+      <span class="pginfo" id="pg-info">–</span>
+      <button class="pgbtn" id="pg-next">다음</button>
+    </div>
+  </section>
+  </div><!-- /page-grants -->
+
+  <div class="page feedpage" id="page-news" hidden>
+  <p class="an-lead">뉴스 1건</p>
+  <section class="an-card">
+    <div class="tablewrap">
+      <table class="feedtable">
+        <thead><tr><th>제목</th><th class="col-src">출처</th><th class="col-date">게시일</th></tr></thead>
+        <tbody>
+<tr data-posted="20260723">
+  <td class="c-title"><a href="https://www.ibric.org/app/bric/news.do?no=10045324" target="_blank" rel="noopener">「자가발전 무선 센싱 전자피부(E-Skin)」 개발 / Bio통신원(강원대학교)</a></td>
+  <td class="c-src"><span class="src-badge">BRIC Bio뉴스</span></td>
+  <td class="c-pd">2026-07-23</td>
+</tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="pager fpager" style="display:none">
+      <button class="pgbtn fpg-prev">이전</button>
+      <span class="pginfo fpg-info">–</span>
+      <button class="pgbtn fpg-next">다음</button>
+    </div>
+  </section>
+</div><!-- /page-news -->
+
+  <div class="page feedpage" id="page-events" hidden>
+  <p class="an-lead">행사 48건</p>
+  <section class="an-card">
+    <div class="tablewrap">
+      <table class="feedtable">
+        <thead><tr><th>제목</th><th class="col-src">출처</th><th class="col-date">게시일</th></tr></thead>
+        <tbody>
+<tr data-posted="20260724">
+  <td class="c-title"><a href="https://www.ibric.org/bric/bioschedule/bio-schedule-event.do?mode=view&amp;articleNo=10045514" target="_blank" rel="noopener">[행사-강의/코스] [크로메이트] 단백질 분리 정제 교육, Chromate, (2026-09-14 ~ 2026-09-16), 하남시 미사강변한강로 135, 스카이폴리스 나동 1008호 (26/07/24)</a></td>
+  <td class="c-src"><span class="src-badge">BRIC Bio일정</span></td>
+  <td class="c-pd">2026-07-24</td>
+</tr>
+<tr data-posted="20260724">
+  <td class="c-title"><a href="https://www.ibric.org/bric/bioschedule/bio-schedule-event.do?mode=view&amp;articleNo=10045502" target="_blank" rel="noopener">[행사-강의/코스] [모집 공고] 바이오·제약 재직자를 위한 HPLC 이론 및 실습 과정(8.13~8.14) 모집 안내, 한국바이오협회/PNB Plus, (2026-08-13 ~ 2026-08-14), (PNB Plus 강의장) 서울시 송파구 문정동 645 에이치비지니스파크 A동 1202호 (26/07/24)</a></td>
+  <td class="c-src"><span class="src-badge">BRIC Bio일정</span></td>
+  <td class="c-pd">2026-07-24</td>
+</tr>
+<tr data-posted="20260724">
+  <td class="c-title"><a href="https://www.ibric.org/bric/bioschedule/bio-schedule-event.do?mode=view&amp;articleNo=10045492" target="_blank" rel="noopener">[행사-기타] 2026 여성과학기술인 커리어 성장 토크: 포상의 기회를 내 것으로 만드는법, 여성과총, (2026-08-19), Online 개최 (26/07/24)</a></td>
+  <td class="c-src"><span class="src-badge">BRIC Bio일정</span></td>
+  <td class="c-pd">2026-07-24</td>
+</tr>
+<tr data-posted="20260724">
+  <td class="c-title"><a href="https://www.ibric.org/bric/bioschedule/bio-schedule-event.do?mode=view&amp;articleNo=10045491" target="_blank" rel="noopener">[행사-포럼] 제77회 과학기술 여성리더스포럼: 초고령 사회와 AI시대, 대한민국 미래의료 비전, 여성과총, (2026-09-04), 엘타워 별관(스포타임) 5층 멜론홀 (26/07/24)</a></td>
+  <td class="c-src"><span class="src-badge">BRIC Bio일정</span></td>
+  <td class="c-pd">2026-07-24</td>
+</tr>
+<tr data-posted="20260724">
+  <td class="c-title"><a href="https://www.ibric.org/bric/bioschedule/bio-schedule-notice.do?mode=view&amp;articleNo=10045488" target="_blank" rel="noopener">[공고] 2026년 NCP 활동지원사업 신규과제 2차 공모, 과기부, 한국연구재단, (~2026-08-26)마감 (26/07/24)</a></td>
+  <td class="c-src"><span class="src-badge">BRIC Bio일정</span></td>
+  <td class="c-pd">2026-07-24</td>
+</tr>
+<tr data-posted="20260724">
+  <td class="c-title"><a href="https://www.ibric.org/bric/bioschedule/bio-schedule-event.do?mode=view&amp;articleNo=10045487" target="_blank" rel="noopener">[행사-워크샵] 2026 제3회 Genome Medicine Academy, 한국유전체학회, (2026-10-17), 고려대학교 의과대학 제1의학관 미디어랩(5F)  (26/07/24)</a></td>
+  <td class="c-src"><span class="src-badge">BRIC Bio일정</span></td>
+  <td class="c-pd">2026-07-24</td>
+</tr>
+<tr data-posted="20260724">
+  <td class="c-title"><a href="https://www.ibric.org/bric/bioschedule/bio-schedule-event.do?mode=view&amp;articleNo=10045485" target="_blank" rel="noopener">[행사-워크샵] 2026년 Clinical NGS Workshop, 대한진단유전학회, (2026-08-26 ~ 2026-09-03), Online 개최 (26/07/24)</a></td>
+  <td class="c-src"><span class="src-badge">BRIC Bio일정</span></td>
+  <td class="c-pd">2026-07-24</td>
+</tr>
+<tr data-posted="20260724">
+  <td class="c-title"><a href="https://www.ibric.org/bric/bioschedule/bio-schedule-event.do?mode=view&amp;articleNo=10045481" target="_blank" rel="noopener">[행사-학회/컨퍼런스] 한국식품영양과학회 2026년 국제학술대회 및 정기총회 개최 안내, 한국식품영양과학회, (2026-10-28 ~ 2026-10-30), 제주국제컨벤션센터 (26/07/24)</a></td>
+  <td class="c-src"><span class="src-badge">BRIC Bio일정</span></td>
+  <td class="c-pd">2026-07-24</td>
+</tr>
+<tr data-posted="20260724">
+  <td class="c-title"><a href="https://www.ibric.org/bric/bioschedule/bio-schedule-notice.do?mode=view&amp;articleNo=10045480" target="_blank" rel="noopener">[공고] 2026년도 제3차 과학기술분야 연구기획과제 공모, 과기부, 한국연구재단, (~2026-08-06)마감 (26/07/24)</a></td>
+  <td class="c-src"><span class="src-badge">BRIC Bio일정</span></td>
+  <td class="c-pd">2026-07-24</td>
+</tr>
+<tr data-posted="20260724">
+  <td class="c-title"><a href="https://www.ibric.org/bric/bioschedule/bio-schedule-event.do?mode=view&amp;articleNo=10045479" target="_blank" rel="noopener">[행사-심포지엄] 2026 한양생명과학기술원 애뉴얼 심포지엄, 한양생명과학기술원, (2026-08-21), 성동구 왕십리로222 HIT 6층 대회의실 (26/07/24)</a></td>
+  <td class="c-src"><span class="src-badge">BRIC Bio일정</span></td>
+  <td class="c-pd">2026-07-24</td>
+</tr>
+<tr data-posted="20260724">
+  <td class="c-title"><a href="https://www.ibric.org/bric/bioschedule/bio-schedule-event.do?mode=view&amp;articleNo=10045476" target="_blank" rel="noopener">[행사-강의/코스] 2026년 여성과학기술인 커리어 리부트 프로그램 - 상표정보검색 실무 훈련(대전), 한국여성과학기술인육성재단, (2026-08-18 ~ 2026-08-22), 한국특허전략개발원 대전본원 교육장(대전 중구 선화동 83-11) (26/07/24)</a></td>
+  <td class="c-src"><span class="src-badge">BRIC Bio일정</span></td>
+  <td class="c-pd">2026-07-24</td>
+</tr>
+<tr data-posted="20260724">
+  <td class="c-title"><a href="https://www.ibric.org/bric/bioschedule/bio-schedule-event.do?mode=view&amp;articleNo=10045471" target="_blank" rel="noopener">[행사-워크샵] R&amp;D 과제 제안서 작성 오프라인 워크숍, ICNPM, 한국보건산업진흥원, (2026-08-28), 스페이스쉐어 서울역센터 2층, 토파즈홀 (26/07/24)</a></td>
+  <td class="c-src"><span class="src-badge">BRIC Bio일정</span></td>
+  <td class="c-pd">2026-07-24</td>
+</tr>
+<tr data-posted="20260724">
+  <td class="c-title"><a href="https://www.ibric.org/bric/bioschedule/bio-schedule-event.do?mode=view&amp;articleNo=10045469" target="_blank" rel="noopener">[행사-학회/컨퍼런스] 디지털병리 AX 컨퍼런스 26, 디지털병리협회, (2026-08-19 ~ 2026-08-21), 코엑스 Hall C, D 세미나실5 (26/07/24)</a></td>
+  <td class="c-src"><span class="src-badge">BRIC Bio일정</span></td>
+  <td class="c-pd">2026-07-24</td>
+</tr>
+<tr data-posted="20260724">
+  <td class="c-title"><a href="https://www.ibric.org/bric/bioschedule/bio-schedule-notice.do?mode=view&amp;articleNo=10045466" target="_blank" rel="noopener">[공고] 강원연구개발특구 혁신주체 네트워크 구축 및 운영 수요조사 공고, (재)강원연구개발지원단, (~2026-07-26)마감 (26/07/24)</a></td>
+  <td class="c-src"><span class="src-badge">BRIC Bio일정</span></td>
+  <td class="c-pd">2026-07-24</td>
+</tr>
+<tr data-posted="20260724">
+  <td class="c-title"><a href="https://www.ibric.org/bric/bioschedule/bio-schedule-notice.do?mode=view&amp;articleNo=10045459" target="_blank" rel="noopener">[공고] 강원연구개발특구 지역혁신 실증 프로젝트 기획 수요조사 공고, (재)강원테크노파크, (재)강원연구개발지원단, (~2026-07-31)마감 (26/07/24)</a></td>
+  <td class="c-src"><span class="src-badge">BRIC Bio일정</span></td>
+  <td class="c-pd">2026-07-24</td>
+</tr>
+<tr data-posted="20260724">
+  <td class="c-title"><a href="https://www.ibric.org/bric/bioschedule/bio-schedule-event.do?mode=view&amp;articleNo=10045438" target="_blank" rel="noopener">[행사-강의/코스] [바이오융합 교육센터] 분자생물학 완전 정복(3일완성) (취준생, 대학(원)생 40% 할인), DKSH 코리아(주) 바이오융합 교육센터, (2026-07-24 ~ 2026-09-30), 구로구 디지털로34길 43(구로동), 12층 (2호선 구로디지털단지역 - 도보 5분) (26/07/24)</a></td>
+  <td class="c-src"><span class="src-badge">BRIC Bio일정</span></td>
+  <td class="c-pd">2026-07-24</td>
+</tr>
+<tr data-posted="20260724">
+  <td class="c-title"><a href="https://www.ibric.org/bric/bioschedule/bio-schedule-event.do?mode=view&amp;articleNo=10045374&amp;type=premium" target="_blank" rel="noopener">[행사-기타] POSTECH 생명과학과 대학원 온라인 입학 설명회, POSTECH 생명과학과, (2026-08-19), Online 개최 (26/07/24)</a></td>
+  <td class="c-src"><span class="src-badge">BRIC Bio일정</span></td>
+  <td class="c-pd">2026-07-24</td>
+</tr>
+<tr data-posted="20260724">
+  <td class="c-title"><a href="https://www.ibric.org/bric/bioschedule/bio-schedule-event.do?mode=view&amp;articleNo=10045335" target="_blank" rel="noopener">[행사-세미나] [RheoSense 웨비나] 점도 측정을 활용한 단백질 제형의 노화 및 유효 기간 평가, RheoSense, (2026-07-30), Online 개최 (26/07/24)</a></td>
+  <td class="c-src"><span class="src-badge">BRIC Bio일정</span></td>
+  <td class="c-pd">2026-07-24</td>
+</tr>
+<tr data-posted="20260723">
+  <td class="c-title"><a href="https://www.ibric.org/bric/bioschedule/bio-schedule-event.do?mode=view&amp;articleNo=10045281" target="_blank" rel="noopener">[행사-강의/코스] [비오메리으코리아/무상교육] 여름철 식중독 사고, 미생물 품질 데이터로 예방하기 , 비오메리으코리아 , (2026-08-07), 강남구 역삼로 121 유성빌딩 2층 (26/07/23)</a></td>
+  <td class="c-src"><span class="src-badge">BRIC Bio일정</span></td>
+  <td class="c-pd">2026-07-23</td>
+</tr>
+<tr data-posted="20260723">
+  <td class="c-title"><a href="https://www.ibric.org/bric/bioschedule/bio-schedule-event.do?mode=view&amp;articleNo=10045245" target="_blank" rel="noopener">[행사-세미나] [Bio-Rad 세미나] Therapeutic Antibody 개발을 위한 분석 Workflow 및 활용 사례, 한국바이오래드, (2026-08-19), 기초과학연구원 과학문화센터 3층 (대전 유성구 엑스포로 35) (26/07/23)</a></td>
+  <td class="c-src"><span class="src-badge">BRIC Bio일정</span></td>
+  <td class="c-pd">2026-07-23</td>
+</tr>
+<tr data-posted="20260723">
+  <td class="c-title"><a href="https://www.ibric.org/bric/bioschedule/bio-schedule-event.do?mode=view&amp;articleNo=10045238" target="_blank" rel="noopener">[행사-세미나] [Bio-Rad 세미나] CGT 및 Biosimilar 개발을 위한 ddPCR 활용 세미나, 한국바이오래드, (2026-08-20), 기초과학연구원 과학문화센터 3층 (대전 유성구 엑스포로 35) (26/07/23)</a></td>
+  <td class="c-src"><span class="src-badge">BRIC Bio일정</span></td>
+  <td class="c-pd">2026-07-23</td>
+</tr>
+<tr data-posted="20260723">
+  <td class="c-title"><a href="https://www.ibric.org/bric/bioschedule/bio-schedule-event.do?mode=view&amp;articleNo=10045228&amp;type=premium" target="_blank" rel="noopener">[행사-오픈랩] 2026 가톨릭의대 대학원 의과학과 OPEN LAB, 가톨릭대학교 의과대학 BK21 교육연구단, (2026-08-05), 가톨릭대학교 성의교정 옴니버스파크 1층 1013호(대강의실) (26/07/23)</a></td>
+  <td class="c-src"><span class="src-badge">BRIC Bio일정</span></td>
+  <td class="c-pd">2026-07-23</td>
+</tr>
+<tr data-posted="20260723">
+  <td class="c-title"><a href="https://www.ibric.org/bric/bioschedule/bio-schedule-event.do?mode=view&amp;articleNo=10045227" target="_blank" rel="noopener">[행사-워크샵] 한국실험동물수의사회 직무교육 (LOOK2026-2) 및 제78차 연수교육 개최 , 한국실험동물수의사회, (2026-08-20 ~ 2026-08-21), 강릉시 세인트존스호텔 (26/07/23)</a></td>
+  <td class="c-src"><span class="src-badge">BRIC Bio일정</span></td>
+  <td class="c-pd">2026-07-23</td>
+</tr>
+<tr data-posted="20260723">
+  <td class="c-title"><a href="https://www.ibric.org/bric/bioschedule/bio-schedule-notice.do?mode=view&amp;articleNo=10045194" target="_blank" rel="noopener">[공고] 2026 극지 빅데이터-인공지능 활용 경진대회, 극지연구소, (~2026-07-31)마감 (26/07/23)</a></td>
+  <td class="c-src"><span class="src-badge">BRIC Bio일정</span></td>
+  <td class="c-pd">2026-07-23</td>
+</tr>
+<tr data-posted="20260723">
+  <td class="c-title"><a href="https://www.ibric.org/bric/bioschedule/bio-schedule-notice.do?mode=view&amp;articleNo=10045187" target="_blank" rel="noopener">[공고] 제68회 3·1문화상 후보자 추천, 3·1문화재단, (~2026-09-10)마감 (26/07/23)</a></td>
+  <td class="c-src"><span class="src-badge">BRIC Bio일정</span></td>
+  <td class="c-pd">2026-07-23</td>
+</tr>
+<tr data-posted="20260723">
+  <td class="c-title"><a href="https://www.ibric.org/bric/bioschedule/bio-schedule-notice.do?mode=view&amp;articleNo=10045186" target="_blank" rel="noopener">[공고] 제3회 코스맥스 여성과학기술인상 후보자 모집 공고, 대한여성과학기술인회, (~2026-08-21)마감 (26/07/23)</a></td>
+  <td class="c-src"><span class="src-badge">BRIC Bio일정</span></td>
+  <td class="c-pd">2026-07-23</td>
+</tr>
+<tr data-posted="20260723">
+  <td class="c-title"><a href="https://www.ibric.org/bric/bioschedule/bio-schedule-event.do?mode=view&amp;articleNo=10045183" target="_blank" rel="noopener">[행사-심포지엄] 서울아산병원 제8회 신경비상팀 심포지엄, 서울아산병원 , (2026-09-19), 서울아산병원 동관 대강당 (26/07/23)</a></td>
+  <td class="c-src"><span class="src-badge">BRIC Bio일정</span></td>
+  <td class="c-pd">2026-07-23</td>
+</tr>
+<tr data-posted="20260723">
+  <td class="c-title"><a href="https://www.ibric.org/bric/bioschedule/bio-schedule-event.do?mode=view&amp;articleNo=10045177" target="_blank" rel="noopener">[행사-워크샵] 2026년 대한노인정신의학회 연구역량강화 워크샵, 대한노인정신의학회, (2026-08-28), 고려대학교 의과대학 문숙의학관 1층 윤병주홀 (26/07/23)</a></td>
+  <td class="c-src"><span class="src-badge">BRIC Bio일정</span></td>
+  <td class="c-pd">2026-07-23</td>
+</tr>
+<tr data-posted="20260723">
+  <td class="c-title"><a href="https://www.ibric.org/bric/bioschedule/bio-schedule-event.do?mode=view&amp;articleNo=10045174" target="_blank" rel="noopener">[행사-포럼] 한국간담췌외과학회 2026년 통합포럼, 한국간담췌외과학회 , (2026-09-12), 벡스코 (26/07/23)</a></td>
+  <td class="c-src"><span class="src-badge">BRIC Bio일정</span></td>
+  <td class="c-pd">2026-07-23</td>
+</tr>
+<tr data-posted="20260722">
+  <td class="c-title"><a href="https://www.ibric.org/bric/bioschedule/bio-schedule-notice.do?mode=view&amp;articleNo=10045050" target="_blank" rel="noopener">[공고] 2026년 대우재단 정기학술연구지원공모, 대우재단, (~2026-09-15)마감 (26/07/22)</a></td>
+  <td class="c-src"><span class="src-badge">BRIC Bio일정</span></td>
+  <td class="c-pd">2026-07-22</td>
+</tr>
+<tr data-posted="20260722">
+  <td class="c-title"><a href="https://www.ibric.org/bric/bioschedule/bio-schedule-event.do?mode=view&amp;articleNo=10045038" target="_blank" rel="noopener">[행사-포럼] The 7th BCC in 2026 - Bio-health Competition &amp; Congress, 재단법인 미래의학연구재단, (2026-08-14), 서울대학교병원 의학연구혁신센터(CMI)1층 서성환연구홀 (26/07/22)</a></td>
+  <td class="c-src"><span class="src-badge">BRIC Bio일정</span></td>
+  <td class="c-pd">2026-07-22</td>
+</tr>
+<tr data-posted="20260722">
+  <td class="c-title"><a href="https://www.ibric.org/bric/bioschedule/bio-schedule-event.do?mode=view&amp;articleNo=10045028" target="_blank" rel="noopener">[행사-학회/컨퍼런스] 2026년도 대한백신학회(KVS) 추계학술대회, 대한백신학회, (2026-09-18), 가톨릭대학교 성의교정 옴니버스파크 컨벤션홀 (26/07/22)</a></td>
+  <td class="c-src"><span class="src-badge">BRIC Bio일정</span></td>
+  <td class="c-pd">2026-07-22</td>
+</tr>
+<tr data-posted="20260722">
+  <td class="c-title"><a href="https://www.ibric.org/bric/bioschedule/bio-schedule-event.do?mode=view&amp;articleNo=10045017" target="_blank" rel="noopener">[행사-심포지엄] 대한간암학회 제 74차 STC: KLCA-JLCA-TLCA Joint Symposium, 대한간암학회, (2026-08-22), 서울아산병원, 대강당 (지하 1층) (26/07/22)</a></td>
+  <td class="c-src"><span class="src-badge">BRIC Bio일정</span></td>
+  <td class="c-pd">2026-07-22</td>
+</tr>
+<tr data-posted="20260722">
+  <td class="c-title"><a href="https://www.ibric.org/bric/bioschedule/bio-schedule-event.do?mode=view&amp;articleNo=10045008" target="_blank" rel="noopener">[행사-심포지엄] SMC CGTI &amp; SAIHST GCTI 국제심포지엄(9/18, 금), 삼성서울병원 세포·유전자치료연구소, (2026-09-18), Online 개최 (26/07/22)</a></td>
+  <td class="c-src"><span class="src-badge">BRIC Bio일정</span></td>
+  <td class="c-pd">2026-07-22</td>
+</tr>
+<tr data-posted="20260722">
+  <td class="c-title"><a href="https://www.ibric.org/bric/bioschedule/bio-schedule-notice.do?mode=view&amp;articleNo=10044949&amp;type=premium" target="_blank" rel="noopener">[공고] 2026년도 첨단 대형연구장비 이용료 지원 신청서 공모, 대구경북첨단의료산업진흥재단/한국기초과학지원연구원, (~2026-08-31)마감 (26/07/22)</a></td>
+  <td class="c-src"><span class="src-badge">BRIC Bio일정</span></td>
+  <td class="c-pd">2026-07-22</td>
+</tr>
+<tr data-posted="20260722">
+  <td class="c-title"><a href="https://www.ibric.org/bric/bioschedule/bio-schedule-event.do?mode=view&amp;articleNo=10044903" target="_blank" rel="noopener">[행사-워크샵] 2026년 첨단제약바이오 개발 인허가 워크숍, 한국보건산업진흥원, (2026-09-02 ~ 2026-09-03), 엘타워 B1 골드홀, 보건산업진흥원 혁신창업센터 (26/07/22)</a></td>
+  <td class="c-src"><span class="src-badge">BRIC Bio일정</span></td>
+  <td class="c-pd">2026-07-22</td>
+</tr>
+<tr data-posted="20260722">
+  <td class="c-title"><a href="https://www.ibric.org/bric/bioschedule/bio-schedule-event.do?mode=view&amp;articleNo=10044899" target="_blank" rel="noopener">[행사-워크샵] (Remind 및 교육비 정정)분당서울대병원 전임상실험센터 설치류 조직 채취 워크숍(2차) 개최, 분당서울대학교병원, (2026-08-19), 성남시 분당구 돌마로 172, 분당서울대학교병원 헬스케어혁신파크 지석영의생명연구소 지하 2층 전임상실험센터 교육실 (26/07/22)</a></td>
+  <td class="c-src"><span class="src-badge">BRIC Bio일정</span></td>
+  <td class="c-pd">2026-07-22</td>
+</tr>
+<tr data-posted="20260722">
+  <td class="c-title"><a href="https://www.ibric.org/bric/bioschedule/bio-schedule-event.do?mode=view&amp;articleNo=10044891" target="_blank" rel="noopener">[행사-학회/컨퍼런스] 한국바이오경제학회 2026년 하계 학술대회, 한국바이오경제학회/한국보건산업진흥원, (2026-08-20 ~ 2026-08-21), 오션 스위츠 제주 호텔 (26/07/22)</a></td>
+  <td class="c-src"><span class="src-badge">BRIC Bio일정</span></td>
+  <td class="c-pd">2026-07-22</td>
+</tr>
+<tr data-posted="20260722">
+  <td class="c-title"><a href="https://www.ibric.org/bric/bioschedule/bio-schedule-event.do?mode=view&amp;articleNo=10044888" target="_blank" rel="noopener">[행사-학회/컨퍼런스] 바이오의약공방 2026 온콜로지 콜로키움(Biopharmaceutical Workshop Colloquium: Oncology), 바이오의약공방, (2026-09-11), 연세대학교 인천 송도 국제캠퍼스 언더우드기념도서관 7층 국제회의실 (26/07/22)</a></td>
+  <td class="c-src"><span class="src-badge">BRIC Bio일정</span></td>
+  <td class="c-pd">2026-07-22</td>
+</tr>
+<tr data-posted="20260722">
+  <td class="c-title"><a href="https://www.ibric.org/bric/bioschedule/bio-schedule-event.do?mode=view&amp;articleNo=10044885" target="_blank" rel="noopener">[행사-학회/컨퍼런스] 한국조류학회 제40회 학술대회 및 정기총회, 한국조류학회, (2026-11-12 ~ 2026-11-13), 코모도 호텔 부산 (26/07/22)</a></td>
+  <td class="c-src"><span class="src-badge">BRIC Bio일정</span></td>
+  <td class="c-pd">2026-07-22</td>
+</tr>
+<tr data-posted="20260722">
+  <td class="c-title"><a href="https://www.ibric.org/bric/bioschedule/bio-schedule-event.do?mode=view&amp;articleNo=10044865" target="_blank" rel="noopener">[행사-세미나] [웨비나] SPRQ-Nx로 더 빠르고 경제적인 HiFi Sequencing을 경험해 보세요, PacBio, (2026-07-29), Online 개최 (26/07/22)</a></td>
+  <td class="c-src"><span class="src-badge">BRIC Bio일정</span></td>
+  <td class="c-pd">2026-07-22</td>
+</tr>
+<tr data-posted="20260721">
+  <td class="c-title"><a href="https://www.ibric.org/bric/bioschedule/bio-schedule-notice.do?mode=view&amp;articleNo=10044839&amp;type=premium" target="_blank" rel="noopener">[공고] 2026 연구 아이디어 기술사업화 챌린지(모집연장), 보건복지부/보건산업진흥원, (~2026-08-05)마감 (26/07/21)</a></td>
+  <td class="c-src"><span class="src-badge">BRIC Bio일정</span></td>
+  <td class="c-pd">2026-07-21</td>
+</tr>
+<tr data-posted="20260721">
+  <td class="c-title"><a href="https://www.ibric.org/bric/bioschedule/bio-schedule-event.do?mode=view&amp;articleNo=10044763" target="_blank" rel="noopener">[행사-워크샵] KSBi-BIML 2026 Summer 생명정보학 &amp; 머신러닝 여름 워크숍 공지, 한국생명정보학회, (2026-08-04 ~ 2026-08-29), 숭실대학교 숭덕경상관 (26/07/21)</a></td>
+  <td class="c-src"><span class="src-badge">BRIC Bio일정</span></td>
+  <td class="c-pd">2026-07-21</td>
+</tr>
+<tr data-posted="20260721">
+  <td class="c-title"><a href="https://www.ibric.org/bric/bioschedule/bio-schedule-notice.do?mode=view&amp;articleNo=10044759" target="_blank" rel="noopener">[공고] 마이크로바이옴 분석 및 연구 교육 프로그램 개최 , 순천향대학교 프로바이오틱스 마이크로바이옴 연구소, (~2026-07-28)마감 (26/07/21)</a></td>
+  <td class="c-src"><span class="src-badge">BRIC Bio일정</span></td>
+  <td class="c-pd">2026-07-21</td>
+</tr>
+<tr data-posted="20260721">
+  <td class="c-title"><a href="https://www.ibric.org/bric/bioschedule/bio-schedule-event.do?mode=view&amp;articleNo=10044705" target="_blank" rel="noopener">[행사-세미나] 마이코플라즈마 검출부터 규제 대응까지 : qPCR Validation을 활용한 Complete Workflow, MP Biomedicals , (2026-08-26), Online 개최 (26/07/21)</a></td>
+  <td class="c-src"><span class="src-badge">BRIC Bio일정</span></td>
+  <td class="c-pd">2026-07-21</td>
+</tr>
+<tr data-posted="20260721">
+  <td class="c-title"><a href="https://www.ibric.org/bric/bioschedule/bio-schedule-notice.do?mode=view&amp;articleNo=10044701" target="_blank" rel="noopener">[공고] 2027년 제18차 일본 HOPE Meeting 참가자 모집 공모, 한국연구재단, (~2026-08-12)마감 (26/07/21)</a></td>
+  <td class="c-src"><span class="src-badge">BRIC Bio일정</span></td>
+  <td class="c-pd">2026-07-21</td>
+</tr>
+<tr data-posted="20260721">
+  <td class="c-title"><a href="https://www.ibric.org/bric/bioschedule/bio-schedule-notice.do?mode=view&amp;articleNo=10044700" target="_blank" rel="noopener">[공고] 2026년 대한민국 젊은과학자상 선정계획 공고, 과기부, 한국연구재단, (~2026-08-19)마감 (26/07/21)</a></td>
+  <td class="c-src"><span class="src-badge">BRIC Bio일정</span></td>
+  <td class="c-pd">2026-07-21</td>
+</tr>
+<tr data-posted="20260721">
+  <td class="c-title"><a href="https://www.ibric.org/bric/bioschedule/bio-schedule-event.do?mode=view&amp;articleNo=10044630" target="_blank" rel="noopener">[행사-세미나] Quantifying Inflammatory Resolution in Menstrual Fluid, Zymo Research, (2026-07-24), Online 개최 (26/07/21)</a></td>
+  <td class="c-src"><span class="src-badge">BRIC Bio일정</span></td>
+  <td class="c-pd">2026-07-21</td>
+</tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="pager fpager" style="display:none">
+      <button class="pgbtn fpg-prev">이전</button>
+      <span class="pginfo fpg-info">–</span>
+      <button class="pgbtn fpg-next">다음</button>
+    </div>
+  </section>
+</div><!-- /page-events -->
+
+  <div class="page recruitpage" id="page-recruit" hidden>
+  <p class="an-lead">채용 45건</p>
+  <section class="an-card">
+    <div class="rc-controls">
+      <select class="rc-sel" id="rc-method" aria-label="채용방식 필터"><option value="">채용방식 전체</option><option value="계약직">계약직</option><option value="정규직">정규직</option></select>
+      <select class="rc-sel" id="rc-type" aria-label="채용형태 필터"><option value="">채용형태 전체</option><option value="PostDoc">PostDoc</option><option value="경력사원">경력사원</option><option value="기타">기타</option><option value="신입사원">신입사원</option><option value="연구교수">연구교수</option><option value="연구원">연구원</option><option value="인턴사원">인턴사원</option></select>
+      <select class="rc-sel" id="rc-status" aria-label="상태 필터"><option value="">상태 전체</option><option value="live">진행중</option><option value="dday">D-DAY</option><option value="expired">마감</option><option value="always">상시</option></select>
+      <span class="rc-sortlbl">정렬</span>
+      <button class="sortbtn rc-sort" data-key="posted">게시일</button>
+      <button class="sortbtn rc-sort" data-key="deadline">마감일</button>
+      <button class="sortbtn rc-sort" data-key="remain">남은기간</button>
+    </div>
+    <div class="tablewrap">
+      <table class="feedtable">
+        <thead><tr><th>기업명</th><th class="col-tag">최종학력</th><th class="col-tag">채용방식</th><th class="col-tag">채용형태</th><th class="col-date">게시일</th><th class="col-date">마감일</th><th class="col-remain">남은기간</th></tr></thead>
+        <tbody>
+<tr data-order="0" data-posted="20260724" data-deadline="20260906" data-method="계약직" data-type="연구원">
+  <td class="c-title"><a href="https://www.ibric.org/bric/biojob/recruit.do?mode=view&amp;articleNo=10045494" target="_blank" rel="noopener">[아시안치매재단] Bioinformatics·AI 각 분야 연구원 채용(박사급)</a></td>
+  <td class="c-tag">박사</td>
+  <td class="c-tag">계약직</td>
+  <td class="c-tag">연구원</td>
+  <td class="c-pd">2026-07-24</td>
+  <td class="c-dl2">2026-09-06</td>
+  <td class="c-remain"></td>
+</tr>
+<tr data-order="1" data-posted="20260724" data-deadline="20260805" data-method="정규직" data-type="경력사원">
+  <td class="c-title"><a href="https://www.ibric.org/bric/biojob/recruit.do?mode=view&amp;articleNo=10045483" target="_blank" rel="noopener">SK바이오사이언스 7월 신입/경력사원 수시채용</a></td>
+  <td class="c-tag">학력무관</td>
+  <td class="c-tag">정규직</td>
+  <td class="c-tag">경력사원</td>
+  <td class="c-pd">2026-07-24</td>
+  <td class="c-dl2">2026-08-05</td>
+  <td class="c-remain"></td>
+</tr>
+<tr data-order="2" data-posted="20260724" data-deadline="20261002" data-method="계약직" data-type="연구교수">
+  <td class="c-title"><a href="https://www.ibric.org/bric/biojob/recruit.do?mode=view&amp;articleNo=10045478" target="_blank" rel="noopener">경북대학교 의과대학 약리학교실 연구교수 채용 (~2/28)</a></td>
+  <td class="c-tag">박사</td>
+  <td class="c-tag">계약직</td>
+  <td class="c-tag">연구교수</td>
+  <td class="c-pd">2026-07-24</td>
+  <td class="c-dl2">2026-10-02</td>
+  <td class="c-remain"></td>
+</tr>
+<tr data-order="3" data-posted="20260724" data-deadline="20260831" data-method="계약직" data-type="PostDoc">
+  <td class="c-title"><a href="https://www.ibric.org/bric/biojob/recruit.do?mode=view&amp;articleNo=10045477" target="_blank" rel="noopener">서울성모병원 가톨릭대학교 의과대학 의료정보학교실-암오믹스연구실  박사 후 연구원(Post Doc)채용 공고</a></td>
+  <td class="c-tag">박사</td>
+  <td class="c-tag">계약직</td>
+  <td class="c-tag">PostDoc</td>
+  <td class="c-pd">2026-07-24</td>
+  <td class="c-dl2">2026-08-31</td>
+  <td class="c-remain"></td>
+</tr>
+<tr data-order="4" data-posted="20260724" data-deadline="20260831" data-method="계약직" data-type="연구원">
+  <td class="c-title"><a href="https://www.ibric.org/bric/biojob/recruit.do?mode=view&amp;articleNo=10045475" target="_blank" rel="noopener">세종충남대학교병원 인체유래물은행</a></td>
+  <td class="c-tag">학사</td>
+  <td class="c-tag">계약직</td>
+  <td class="c-tag">연구원</td>
+  <td class="c-pd">2026-07-24</td>
+  <td class="c-dl2">2026-08-31</td>
+  <td class="c-remain"></td>
+</tr>
+<tr data-order="5" data-posted="20260724" data-deadline="20260831" data-method="계약직" data-type="연구원">
+  <td class="c-title"><a href="https://www.ibric.org/bric/biojob/recruit.do?mode=view&amp;articleNo=10045468" target="_blank" rel="noopener">[한림대학교성심병원 종양혈액내과] 의료 인공지능 (AI) 분야 박사급/박사후연구원(Post-doc) 채용 공고</a></td>
+  <td class="c-tag">박사</td>
+  <td class="c-tag">계약직</td>
+  <td class="c-tag">연구원</td>
+  <td class="c-pd">2026-07-24</td>
+  <td class="c-dl2">2026-08-31</td>
+  <td class="c-remain"></td>
+</tr>
+<tr data-order="6" data-posted="20260724" data-deadline="20260930" data-method="계약직" data-type="연구원">
+  <td class="c-title"><a href="https://www.ibric.org/bric/biojob/recruit.do?mode=view&amp;articleNo=10045449" target="_blank" rel="noopener">삼성서울병원 소화기내과 연구실 — 염증성 장질환(IBD) 연구실 연구원 모집</a></td>
+  <td class="c-tag">석사</td>
+  <td class="c-tag">계약직</td>
+  <td class="c-tag">연구원</td>
+  <td class="c-pd">2026-07-24</td>
+  <td class="c-dl2">2026-09-30</td>
+  <td class="c-remain"></td>
+</tr>
+<tr data-order="7" data-posted="20260724" data-deadline="20260814" data-method="계약직" data-type="연구원">
+  <td class="c-title"><a href="https://www.ibric.org/bric/biojob/recruit.do?mode=view&amp;articleNo=10045431" target="_blank" rel="noopener">월드프랩</a></td>
+  <td class="c-tag">학사</td>
+  <td class="c-tag">계약직</td>
+  <td class="c-tag">연구원</td>
+  <td class="c-pd">2026-07-24</td>
+  <td class="c-dl2">2026-08-14</td>
+  <td class="c-remain"></td>
+</tr>
+<tr data-order="8" data-posted="20260724" data-deadline="20261002" data-method="계약직" data-type="인턴사원">
+  <td class="c-title"><a href="https://www.ibric.org/bric/biojob/recruit.do?mode=view&amp;articleNo=10045408" target="_blank" rel="noopener">경북대학교 의과대학 의과학과 분자의학교실 Chembio lab 유정수 교수님 연구실</a></td>
+  <td class="c-tag">학사</td>
+  <td class="c-tag">계약직</td>
+  <td class="c-tag">인턴사원</td>
+  <td class="c-pd">2026-07-24</td>
+  <td class="c-dl2">2026-10-02</td>
+  <td class="c-remain"></td>
+</tr>
+<tr data-order="9" data-posted="20260724" data-deadline="20261002" data-method="계약직" data-type="PostDoc">
+  <td class="c-title"><a href="https://www.ibric.org/bric/biojob/recruit.do?mode=view&amp;articleNo=10045407" target="_blank" rel="noopener">대구경북과학기술원 뇌과학과 감정신경과학 연구실</a></td>
+  <td class="c-tag">박사</td>
+  <td class="c-tag">계약직</td>
+  <td class="c-tag">PostDoc</td>
+  <td class="c-pd">2026-07-24</td>
+  <td class="c-dl2">2026-10-02</td>
+  <td class="c-remain"></td>
+</tr>
+<tr data-order="10" data-posted="20260724" data-deadline="20260803" data-method="계약직" data-type="연구원">
+  <td class="c-title"><a href="https://www.ibric.org/bric/biojob/recruit.do?mode=view&amp;articleNo=10045354" target="_blank" rel="noopener">건국대학교</a></td>
+  <td class="c-tag">석사</td>
+  <td class="c-tag">계약직</td>
+  <td class="c-tag">연구원</td>
+  <td class="c-pd">2026-07-24</td>
+  <td class="c-dl2">2026-08-03</td>
+  <td class="c-remain"></td>
+</tr>
+<tr data-order="11" data-posted="20260724" data-deadline="20261002" data-method="정규직" data-type="신입사원">
+  <td class="c-title"><a href="https://www.ibric.org/bric/biojob/recruit.do?mode=view&amp;articleNo=10045352" target="_blank" rel="noopener">(주)인트론바이오 R&amp;BD 부문 (인트론 R&amp;BD 연구소)</a></td>
+  <td class="c-tag">석사</td>
+  <td class="c-tag">정규직</td>
+  <td class="c-tag">신입사원</td>
+  <td class="c-pd">2026-07-24</td>
+  <td class="c-dl2">2026-10-02</td>
+  <td class="c-remain"></td>
+</tr>
+<tr data-order="12" data-posted="20260724" data-deadline="20261002" data-method="정규직" data-type="경력사원">
+  <td class="c-title"><a href="https://www.ibric.org/bric/biojob/recruit.do?mode=view&amp;articleNo=10045349" target="_blank" rel="noopener">(주)인트론바이오 전략기획실 [경영·기획 부문]</a></td>
+  <td class="c-tag">학사</td>
+  <td class="c-tag">정규직</td>
+  <td class="c-tag">경력사원</td>
+  <td class="c-pd">2026-07-24</td>
+  <td class="c-dl2">2026-10-02</td>
+  <td class="c-remain"></td>
+</tr>
+<tr data-order="13" data-posted="20260723" data-deadline="20260807" data-method="계약직" data-type="연구원">
+  <td class="c-title"><a href="https://www.ibric.org/bric/biojob/recruit.do?mode=view&amp;articleNo=10045329" target="_blank" rel="noopener">아주대의료원 인체유전체자원센터(인체자원은행)</a></td>
+  <td class="c-tag">학사</td>
+  <td class="c-tag">계약직</td>
+  <td class="c-tag">연구원</td>
+  <td class="c-pd">2026-07-23</td>
+  <td class="c-dl2">2026-08-07</td>
+  <td class="c-remain"></td>
+</tr>
+<tr data-order="14" data-posted="20260723" data-deadline="20260731" data-method="계약직" data-type="연구원">
+  <td class="c-title"><a href="https://www.ibric.org/bric/biojob/recruit.do?mode=view&amp;articleNo=10045311" target="_blank" rel="noopener">연세대학교 의과대학 산부인과학교실</a></td>
+  <td class="c-tag">학력무관</td>
+  <td class="c-tag">계약직</td>
+  <td class="c-tag">연구원</td>
+  <td class="c-pd">2026-07-23</td>
+  <td class="c-dl2">2026-07-31</td>
+  <td class="c-remain"></td>
+</tr>
+<tr data-order="15" data-posted="20260723" data-deadline="20260810" data-method="계약직" data-type="연구원">
+  <td class="c-title"><a href="https://www.ibric.org/bric/biojob/recruit.do?mode=view&amp;articleNo=10045310" target="_blank" rel="noopener">부산대학교 의과대학 (양산캠퍼스)</a></td>
+  <td class="c-tag">전문대졸</td>
+  <td class="c-tag">계약직</td>
+  <td class="c-tag">연구원</td>
+  <td class="c-pd">2026-07-23</td>
+  <td class="c-dl2">2026-08-10</td>
+  <td class="c-remain"></td>
+</tr>
+<tr data-order="16" data-posted="20260723" data-deadline="20260822" data-method="계약직" data-type="연구원">
+  <td class="c-title"><a href="https://www.ibric.org/bric/biojob/recruit.do?mode=view&amp;articleNo=10045302" target="_blank" rel="noopener">서울대학교병원</a></td>
+  <td class="c-tag">석사</td>
+  <td class="c-tag">계약직</td>
+  <td class="c-tag">연구원</td>
+  <td class="c-pd">2026-07-23</td>
+  <td class="c-dl2">2026-08-22</td>
+  <td class="c-remain"></td>
+</tr>
+<tr data-order="17" data-posted="20260723" data-deadline="20260807" data-method="정규직" data-type="경력사원">
+  <td class="c-title"><a href="https://www.ibric.org/bric/biojob/recruit.do?mode=view&amp;articleNo=10045301" target="_blank" rel="noopener">(사)분자설계연구소</a></td>
+  <td class="c-tag">박사</td>
+  <td class="c-tag">정규직</td>
+  <td class="c-tag">경력사원</td>
+  <td class="c-pd">2026-07-23</td>
+  <td class="c-dl2">2026-08-07</td>
+  <td class="c-remain"></td>
+</tr>
+<tr data-order="18" data-posted="20260723" data-deadline="20261001" data-method="계약직" data-type="PostDoc">
+  <td class="c-title"><a href="https://www.ibric.org/bric/biojob/recruit.do?mode=view&amp;articleNo=10045265" target="_blank" rel="noopener">성신여자대학교 바이오신약의과학부 박사후연구원 및 석사급연구원 모집</a></td>
+  <td class="c-tag">박사</td>
+  <td class="c-tag">계약직</td>
+  <td class="c-tag">PostDoc</td>
+  <td class="c-pd">2026-07-23</td>
+  <td class="c-dl2">2026-10-01</td>
+  <td class="c-remain"></td>
+</tr>
+<tr data-order="19" data-posted="20260723" data-deadline="20260803" data-method="정규직" data-type="경력사원">
+  <td class="c-title"><a href="https://www.ibric.org/bric/biojob/recruit.do?mode=view&amp;articleNo=10045261" target="_blank" rel="noopener">주식회사 씨젠 AI 서비스 기획/검증자 채용</a></td>
+  <td class="c-tag">석사</td>
+  <td class="c-tag">정규직</td>
+  <td class="c-tag">경력사원</td>
+  <td class="c-pd">2026-07-23</td>
+  <td class="c-dl2">2026-08-03</td>
+  <td class="c-remain"></td>
+</tr>
+<tr data-order="20" data-posted="20260723" data-deadline="20260802" data-method="정규직" data-type="연구원">
+  <td class="c-title"><a href="https://www.ibric.org/bric/biojob/recruit.do?mode=view&amp;articleNo=10045240" target="_blank" rel="noopener">(주)한국화장품제조 화장품 안전성 평가(SA) 신입, 경력 채용</a></td>
+  <td class="c-tag">학사</td>
+  <td class="c-tag">정규직</td>
+  <td class="c-tag">연구원</td>
+  <td class="c-pd">2026-07-23</td>
+  <td class="c-dl2">2026-08-02</td>
+  <td class="c-remain"></td>
+</tr>
+<tr data-order="21" data-posted="20260723" data-deadline="20260729" data-method="계약직" data-type="연구원">
+  <td class="c-title"><a href="https://www.ibric.org/bric/biojob/recruit.do?mode=view&amp;articleNo=10045236" target="_blank" rel="noopener">삼성서울병원 AI신약디자인랩 CRC모집</a></td>
+  <td class="c-tag">학사</td>
+  <td class="c-tag">계약직</td>
+  <td class="c-tag">연구원</td>
+  <td class="c-pd">2026-07-23</td>
+  <td class="c-dl2">2026-07-29</td>
+  <td class="c-remain"></td>
+</tr>
+<tr data-order="22" data-posted="20260723" data-deadline="20260828" data-method="계약직" data-type="연구원">
+  <td class="c-title"><a href="https://www.ibric.org/bric/biojob/recruit.do?mode=view&amp;articleNo=10045235" target="_blank" rel="noopener">서울대학교 자연과학대학 생명과학부</a></td>
+  <td class="c-tag">학사</td>
+  <td class="c-tag">계약직</td>
+  <td class="c-tag">연구원</td>
+  <td class="c-pd">2026-07-23</td>
+  <td class="c-dl2">2026-08-28</td>
+  <td class="c-remain"></td>
+</tr>
+<tr data-order="23" data-posted="20260723" data-deadline="20260826" data-method="정규직" data-type="연구원">
+  <td class="c-title"><a href="https://www.ibric.org/bric/biojob/recruit.do?mode=view&amp;articleNo=10045214&amp;type=premium" target="_blank" rel="noopener">한국뇌연구원 2026년도 제4차 직원(정규직)채용</a></td>
+  <td class="c-tag">박사</td>
+  <td class="c-tag">정규직</td>
+  <td class="c-tag">연구원</td>
+  <td class="c-pd">2026-07-23</td>
+  <td class="c-dl2">2026-08-26</td>
+  <td class="c-remain"></td>
+</tr>
+<tr data-order="24" data-posted="20260723" data-deadline="20260813" data-method="계약직" data-type="연구원">
+  <td class="c-title"><a href="https://www.ibric.org/bric/biojob/recruit.do?mode=view&amp;articleNo=10045205" target="_blank" rel="noopener">연세대학 의과대학 미생물학교실 (B세포 활성화 및 관용성 조절 연구)</a></td>
+  <td class="c-tag">박사</td>
+  <td class="c-tag">계약직</td>
+  <td class="c-tag">연구원</td>
+  <td class="c-pd">2026-07-23</td>
+  <td class="c-dl2">2026-08-13</td>
+  <td class="c-remain"></td>
+</tr>
+<tr data-order="25" data-posted="20260723" data-deadline="20260930" data-method="계약직" data-type="연구원">
+  <td class="c-title"><a href="https://www.ibric.org/bric/biojob/recruit.do?mode=view&amp;articleNo=10045200" target="_blank" rel="noopener">제주대학교 의과대학 생리학교실 만성대사질환연구실</a></td>
+  <td class="c-tag">석사수료</td>
+  <td class="c-tag">계약직</td>
+  <td class="c-tag">연구원</td>
+  <td class="c-pd">2026-07-23</td>
+  <td class="c-dl2">2026-09-30</td>
+  <td class="c-remain"></td>
+</tr>
+<tr data-order="26" data-posted="20260723" data-deadline="20260930" data-method="정규직" data-type="연구원">
+  <td class="c-title"><a href="https://www.ibric.org/bric/biojob/recruit.do?mode=view&amp;articleNo=10045159" target="_blank" rel="noopener">오비이랩</a></td>
+  <td class="c-tag">박사수료</td>
+  <td class="c-tag">정규직</td>
+  <td class="c-tag">연구원</td>
+  <td class="c-pd">2026-07-23</td>
+  <td class="c-dl2">2026-09-30</td>
+  <td class="c-remain"></td>
+</tr>
+<tr data-order="27" data-posted="20260723" data-deadline="20260925" data-method="정규직" data-type="신입사원">
+  <td class="c-title"><a href="https://www.ibric.org/bric/biojob/recruit.do?mode=view&amp;articleNo=10045140" target="_blank" rel="noopener">(주)에이비클로널코리아</a></td>
+  <td class="c-tag">석사</td>
+  <td class="c-tag">정규직</td>
+  <td class="c-tag">신입사원</td>
+  <td class="c-pd">2026-07-23</td>
+  <td class="c-dl2">2026-09-25</td>
+  <td class="c-remain"></td>
+</tr>
+<tr data-order="28" data-posted="20260723" data-deadline="20260831" data-method="정규직" data-type="경력사원">
+  <td class="c-title"><a href="https://www.ibric.org/bric/biojob/recruit.do?mode=view&amp;articleNo=10045135" target="_blank" rel="noopener">[Beckman Coulter Life Sciences Korea] Senior Regional (TASK) Sales Operations Analyst 모집</a></td>
+  <td class="c-tag">학사</td>
+  <td class="c-tag">정규직</td>
+  <td class="c-tag">경력사원</td>
+  <td class="c-pd">2026-07-23</td>
+  <td class="c-dl2">2026-08-31</td>
+  <td class="c-remain"></td>
+</tr>
+<tr data-order="29" data-posted="20260723" data-deadline="20260831" data-method="계약직" data-type="연구원">
+  <td class="c-title"><a href="https://www.ibric.org/bric/biojob/recruit.do?mode=view&amp;articleNo=10045134" target="_blank" rel="noopener">국민대학교 과학기술대학 응용화학부 바이오의약전공</a></td>
+  <td class="c-tag">학사</td>
+  <td class="c-tag">계약직</td>
+  <td class="c-tag">연구원</td>
+  <td class="c-pd">2026-07-23</td>
+  <td class="c-dl2">2026-08-31</td>
+  <td class="c-remain"></td>
+</tr>
+<tr data-order="30" data-posted="20260723" data-deadline="20260802" data-method="계약직" data-type="연구원">
+  <td class="c-title"><a href="https://www.ibric.org/bric/biojob/recruit.do?mode=view&amp;articleNo=10045123" target="_blank" rel="noopener">우석대학교 한의과대학 본초학교실(전주)</a></td>
+  <td class="c-tag">학력무관</td>
+  <td class="c-tag">계약직</td>
+  <td class="c-tag">연구원</td>
+  <td class="c-pd">2026-07-23</td>
+  <td class="c-dl2">2026-08-02</td>
+  <td class="c-remain"></td>
+</tr>
+<tr data-order="31" data-posted="20260722" data-deadline="20260807" data-method="계약직" data-type="연구원">
+  <td class="c-title"><a href="https://www.ibric.org/bric/biojob/recruit.do?mode=view&amp;articleNo=10045087" target="_blank" rel="noopener">성균관대학교 SAIHST, 삼성서울병원</a></td>
+  <td class="c-tag">학사</td>
+  <td class="c-tag">계약직</td>
+  <td class="c-tag">연구원</td>
+  <td class="c-pd">2026-07-22</td>
+  <td class="c-dl2">2026-08-07</td>
+  <td class="c-remain"></td>
+</tr>
+<tr data-order="32" data-posted="20260722" data-deadline="20260930" data-method="계약직" data-type="연구원">
+  <td class="c-title"><a href="https://www.ibric.org/bric/biojob/recruit.do?mode=view&amp;articleNo=10045086" target="_blank" rel="noopener">[경력복귀] 한국과학기술연구원 (KIST), 뇌과학연구소, 석사급 연구원 (WISET 여성과학기술인 경력복귀 지원사업)</a></td>
+  <td class="c-tag">석사</td>
+  <td class="c-tag">계약직</td>
+  <td class="c-tag">연구원</td>
+  <td class="c-pd">2026-07-22</td>
+  <td class="c-dl2">2026-09-30</td>
+  <td class="c-remain"></td>
+</tr>
+<tr data-order="33" data-posted="20260722" data-deadline="20260815" data-method="계약직" data-type="연구원">
+  <td class="c-title"><a href="https://www.ibric.org/bric/biojob/recruit.do?mode=view&amp;articleNo=10045079" target="_blank" rel="noopener">아주대의료원 정신 및 행동장애질환 유효성평가센터(아주 MBD T2B 센터)</a></td>
+  <td class="c-tag">석사</td>
+  <td class="c-tag">계약직</td>
+  <td class="c-tag">연구원</td>
+  <td class="c-pd">2026-07-22</td>
+  <td class="c-dl2">2026-08-15</td>
+  <td class="c-remain"></td>
+</tr>
+<tr data-order="34" data-posted="20260722" data-deadline="20260815" data-method="계약직" data-type="연구원">
+  <td class="c-title"><a href="https://www.ibric.org/bric/biojob/recruit.do?mode=view&amp;articleNo=10045078" target="_blank" rel="noopener">아주대의료원 정신 및 행동장애질환 유효성평가센터(아주 MBD T2B 센터)</a></td>
+  <td class="c-tag">전문대졸</td>
+  <td class="c-tag">계약직</td>
+  <td class="c-tag">연구원</td>
+  <td class="c-pd">2026-07-22</td>
+  <td class="c-dl2">2026-08-15</td>
+  <td class="c-remain"></td>
+</tr>
+<tr data-order="35" data-posted="20260722" data-deadline="20260731" data-method="계약직" data-type="기타">
+  <td class="c-title"><a href="https://www.ibric.org/bric/biojob/recruit.do?mode=view&amp;articleNo=10045077" target="_blank" rel="noopener">세브란스 재활의학연구소</a></td>
+  <td class="c-tag">학사</td>
+  <td class="c-tag">계약직</td>
+  <td class="c-tag">기타</td>
+  <td class="c-pd">2026-07-22</td>
+  <td class="c-dl2">2026-07-31</td>
+  <td class="c-remain"></td>
+</tr>
+<tr data-order="36" data-posted="20260722" data-deadline="20260821" data-method="계약직" data-type="연구원">
+  <td class="c-title"><a href="https://www.ibric.org/bric/biojob/recruit.do?mode=view&amp;articleNo=10045049" target="_blank" rel="noopener">전남대학교 구강병리학교실 줄기세포 엑소좀 연구실</a></td>
+  <td class="c-tag">석사</td>
+  <td class="c-tag">계약직</td>
+  <td class="c-tag">연구원</td>
+  <td class="c-pd">2026-07-22</td>
+  <td class="c-dl2">2026-08-21</td>
+  <td class="c-remain"></td>
+</tr>
+<tr data-order="37" data-posted="20260722" data-deadline="20260805" data-method="계약직" data-type="연구원">
+  <td class="c-title"><a href="https://www.ibric.org/bric/biojob/recruit.do?mode=view&amp;articleNo=10045045" target="_blank" rel="noopener">삼성서울병원 임상약리학과 프로젝트 연구원 채용</a></td>
+  <td class="c-tag">석사수료</td>
+  <td class="c-tag">계약직</td>
+  <td class="c-tag">연구원</td>
+  <td class="c-pd">2026-07-22</td>
+  <td class="c-dl2">2026-08-05</td>
+  <td class="c-remain"></td>
+</tr>
+<tr data-order="38" data-posted="20260722" data-deadline="20260930" data-method="계약직" data-type="연구원">
+  <td class="c-title"><a href="https://www.ibric.org/bric/biojob/recruit.do?mode=view&amp;articleNo=10045034" target="_blank" rel="noopener">전남대학교 약학대학 사회약학연구실</a></td>
+  <td class="c-tag">학사</td>
+  <td class="c-tag">계약직</td>
+  <td class="c-tag">연구원</td>
+  <td class="c-pd">2026-07-22</td>
+  <td class="c-dl2">2026-09-30</td>
+  <td class="c-remain"></td>
+</tr>
+<tr data-order="39" data-posted="20260722" data-deadline="20260821" data-method="정규직" data-type="경력사원">
+  <td class="c-title"><a href="https://www.ibric.org/bric/biojob/recruit.do?mode=view&amp;articleNo=10045033" target="_blank" rel="noopener">엘브이아이에스코리아(주) 뇌진단 AI 솔루션 사업개발 담당자 (Life Sciences)</a></td>
+  <td class="c-tag">석사</td>
+  <td class="c-tag">정규직</td>
+  <td class="c-tag">경력사원</td>
+  <td class="c-pd">2026-07-22</td>
+  <td class="c-dl2">2026-08-21</td>
+  <td class="c-remain"></td>
+</tr>
+<tr data-order="40" data-posted="20260722" data-deadline="20260930" data-method="계약직" data-type="연구원">
+  <td class="c-title"><a href="https://www.ibric.org/bric/biojob/recruit.do?mode=view&amp;articleNo=10045001" target="_blank" rel="noopener">전북대학교 의과대학 피부과</a></td>
+  <td class="c-tag">석사</td>
+  <td class="c-tag">계약직</td>
+  <td class="c-tag">연구원</td>
+  <td class="c-pd">2026-07-22</td>
+  <td class="c-dl2">2026-09-30</td>
+  <td class="c-remain"></td>
+</tr>
+<tr data-order="41" data-posted="20260722" data-deadline="20260810" data-method="계약직" data-type="연구원">
+  <td class="c-title"><a href="https://www.ibric.org/bric/biojob/recruit.do?mode=view&amp;articleNo=10044972" target="_blank" rel="noopener">상지대학교 한의과대학 세포면역학연구실</a></td>
+  <td class="c-tag">학사</td>
+  <td class="c-tag">계약직</td>
+  <td class="c-tag">연구원</td>
+  <td class="c-pd">2026-07-22</td>
+  <td class="c-dl2">2026-08-10</td>
+  <td class="c-remain"></td>
+</tr>
+<tr data-order="42" data-posted="20260722" data-deadline="20260831" data-method="정규직" data-type="연구원">
+  <td class="c-title"><a href="https://www.ibric.org/bric/biojob/recruit.do?mode=view&amp;articleNo=10044937" target="_blank" rel="noopener">[주식회사 보름바이오] 항원·항체 및 진단키트 분야 연구원 채용</a></td>
+  <td class="c-tag">학사</td>
+  <td class="c-tag">정규직</td>
+  <td class="c-tag">연구원</td>
+  <td class="c-pd">2026-07-22</td>
+  <td class="c-dl2">2026-08-31</td>
+  <td class="c-remain"></td>
+</tr>
+<tr data-order="43" data-posted="20260722" data-deadline="20260807" data-method="계약직" data-type="PostDoc">
+  <td class="c-title"><a href="https://www.ibric.org/bric/biojob/recruit.do?mode=view&amp;articleNo=10044934" target="_blank" rel="noopener">Full-time Postdoctoral Researcher - Center for Plant Biotechnology-Ghent University Global Campus, Korea</a></td>
+  <td class="c-tag">박사</td>
+  <td class="c-tag">계약직</td>
+  <td class="c-tag">PostDoc</td>
+  <td class="c-pd">2026-07-22</td>
+  <td class="c-dl2">2026-08-07</td>
+  <td class="c-remain"></td>
+</tr>
+<tr data-order="44" data-posted="20260722" data-deadline="20260831" data-method="계약직" data-type="기타">
+  <td class="c-title"><a href="https://www.ibric.org/bric/biojob/recruit.do?mode=view&amp;articleNo=10044892" target="_blank" rel="noopener">조선대학교 광주치매코호트연구단 ARPA-H 프로젝트 사업 실무 책임</a></td>
+  <td class="c-tag">석사</td>
+  <td class="c-tag">계약직</td>
+  <td class="c-tag">기타</td>
+  <td class="c-pd">2026-07-22</td>
+  <td class="c-dl2">2026-08-31</td>
+  <td class="c-remain"></td>
+</tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="pager fpager" style="display:none">
+      <button class="pgbtn fpg-prev">이전</button>
+      <span class="pginfo fpg-info">–</span>
+      <button class="pgbtn fpg-next">다음</button>
+    </div>
+  </section>
+</div><!-- /page-recruit -->
+
+  <div class="page" id="page-analysis" hidden>
+    <p class="an-lead">수집 공고 26건 기준 · 향후 공고를 예측·대비하기 위한 참고 자료입니다.</p>
+    <div class="an-grid">
+      <section class="an-card">
+        <h2>주제별 비율 <span class="an-total">(26건)</span></h2>
+        <p class="an-cap">각 공고를 우선순위 높은 매칭 키워드 1개로 분류 · 매칭 없으면 미분류</p>
+        <div class="chart"><div class="donut-wrap"><svg viewBox="0 0 168 168" width="168" height="168" class="donut" role="img" aria-label="도넛 차트"><circle cx="84.0" cy="84.0" r="71.00" fill="none" stroke="#5aa0ff" stroke-width="26" pathLength="100" stroke-dasharray="19.231 80.769" stroke-dashoffset="25.000"></circle><circle cx="84.0" cy="84.0" r="71.00" fill="none" stroke="#f2a65a" stroke-width="26" pathLength="100" stroke-dasharray="15.385 84.615" stroke-dashoffset="5.769"></circle><circle cx="84.0" cy="84.0" r="71.00" fill="none" stroke="#5ad1a0" stroke-width="26" pathLength="100" stroke-dasharray="11.538 88.462" stroke-dashoffset="-9.615"></circle><circle cx="84.0" cy="84.0" r="71.00" fill="none" stroke="#c479f0" stroke-width="26" pathLength="100" stroke-dasharray="11.538 88.462" stroke-dashoffset="-21.154"></circle><circle cx="84.0" cy="84.0" r="71.00" fill="none" stroke="#6b7690" stroke-width="26" pathLength="100" stroke-dasharray="11.538 88.462" stroke-dashoffset="-32.692"></circle><circle cx="84.0" cy="84.0" r="71.00" fill="none" stroke="#e0c04a" stroke-width="26" pathLength="100" stroke-dasharray="7.692 92.308" stroke-dashoffset="-44.231"></circle><circle cx="84.0" cy="84.0" r="71.00" fill="none" stroke="#4ac0d8" stroke-width="26" pathLength="100" stroke-dasharray="7.692 92.308" stroke-dashoffset="-51.923"></circle><circle cx="84.0" cy="84.0" r="71.00" fill="none" stroke="#e07ba0" stroke-width="26" pathLength="100" stroke-dasharray="7.692 92.308" stroke-dashoffset="-59.615"></circle><circle cx="84.0" cy="84.0" r="71.00" fill="none" stroke="#7bd85a" stroke-width="26" pathLength="100" stroke-dasharray="3.846 96.154" stroke-dashoffset="-67.308"></circle><circle cx="84.0" cy="84.0" r="71.00" fill="none" stroke="#b39ddb" stroke-width="26" pathLength="100" stroke-dasharray="3.846 96.154" stroke-dashoffset="-71.154"></circle></svg></div><ul class="legend"><li><span class="sw" style="background:#5aa0ff"></span><span class="lg-l">의료기기</span><span class="lg-n">5 · 19%</span></li><li><span class="sw" style="background:#f2a65a"></span><span class="lg-l">바이오</span><span class="lg-n">4 · 15%</span></li><li><span class="sw" style="background:#5ad1a0"></span><span class="lg-l">백신</span><span class="lg-n">3 · 12%</span></li><li><span class="sw" style="background:#c479f0"></span><span class="lg-l">신약</span><span class="lg-n">3 · 12%</span></li><li><span class="sw" style="background:#6b7690"></span><span class="lg-l">기타</span><span class="lg-n">3 · 12%</span></li><li><span class="sw" style="background:#e0c04a"></span><span class="lg-l">감염</span><span class="lg-n">2 · 8%</span></li><li><span class="sw" style="background:#4ac0d8"></span><span class="lg-l">구축</span><span class="lg-n">2 · 8%</span></li><li><span class="sw" style="background:#e07ba0"></span><span class="lg-l">데이터</span><span class="lg-n">2 · 8%</span></li><li><span class="sw" style="background:#7bd85a"></span><span class="lg-l">인공지능</span><span class="lg-n">1 · 4%</span></li><li><span class="sw" style="background:#b39ddb"></span><span class="lg-l">인재양성</span><span class="lg-n">1 · 4%</span></li></ul></div>
+      </section>
+      <section class="an-card">
+        <h2>기관별 비율 <span class="an-total">(26건)</span></h2>
+        <p class="an-cap">공고 기관·부처 기준 · 상위 7곳 외 기타로 묶음</p>
+        <div class="chart"><div class="donut-wrap"><svg viewBox="0 0 168 168" width="168" height="168" class="donut" role="img" aria-label="도넛 차트"><circle cx="84.0" cy="84.0" r="71.00" fill="none" stroke="#5aa0ff" stroke-width="26" pathLength="100" stroke-dasharray="26.923 73.077" stroke-dashoffset="25.000"></circle><circle cx="84.0" cy="84.0" r="71.00" fill="none" stroke="#f2a65a" stroke-width="26" pathLength="100" stroke-dasharray="19.231 80.769" stroke-dashoffset="-1.923"></circle><circle cx="84.0" cy="84.0" r="71.00" fill="none" stroke="#5ad1a0" stroke-width="26" pathLength="100" stroke-dasharray="15.385 84.615" stroke-dashoffset="-21.154"></circle><circle cx="84.0" cy="84.0" r="71.00" fill="none" stroke="#6b7690" stroke-width="26" pathLength="100" stroke-dasharray="15.385 84.615" stroke-dashoffset="-36.538"></circle><circle cx="84.0" cy="84.0" r="71.00" fill="none" stroke="#f06b6b" stroke-width="26" pathLength="100" stroke-dasharray="11.538 88.462" stroke-dashoffset="-51.923"></circle><circle cx="84.0" cy="84.0" r="71.00" fill="none" stroke="#e0c04a" stroke-width="26" pathLength="100" stroke-dasharray="3.846 96.154" stroke-dashoffset="-63.462"></circle><circle cx="84.0" cy="84.0" r="71.00" fill="none" stroke="#4ac0d8" stroke-width="26" pathLength="100" stroke-dasharray="3.846 96.154" stroke-dashoffset="-67.308"></circle><circle cx="84.0" cy="84.0" r="71.00" fill="none" stroke="#e07ba0" stroke-width="26" pathLength="100" stroke-dasharray="3.846 96.154" stroke-dashoffset="-71.154"></circle></svg></div><ul class="legend"><li><span class="sw" style="background:#5aa0ff"></span><span class="lg-l">한국보건산업진흥원</span><span class="lg-n">7 · 27%</span></li><li><span class="sw" style="background:#f2a65a"></span><span class="lg-l">한국연구재단</span><span class="lg-n">5 · 19%</span></li><li><span class="sw" style="background:#5ad1a0"></span><span class="lg-l">재단법인 범부처의료기기연구개발사업단</span><span class="lg-n">4 · 15%</span></li><li><span class="sw" style="background:#6b7690"></span><span class="lg-l">기타</span><span class="lg-n">4 · 15%</span></li><li><span class="sw" style="background:#f06b6b"></span><span class="lg-l">재단법인 국가신약개발재단</span><span class="lg-n">3 · 12%</span></li><li><span class="sw" style="background:#e0c04a"></span><span class="lg-l">국방과학연구소</span><span class="lg-n">1 · 4%</span></li><li><span class="sw" style="background:#4ac0d8"></span><span class="lg-l">범부처의료기기연구개발사업단</span><span class="lg-n">1 · 4%</span></li><li><span class="sw" style="background:#e07ba0"></span><span class="lg-l">우주항공청</span><span class="lg-n">1 · 4%</span></li></ul></div>
+      </section>
+    </div>
+    <section class="an-card">
+      <h2>월별 공고 추이</h2>
+      <p class="an-cap">공고일(pubDate) 기준 · 데이터가 쌓일수록 공고 시기 예측에 활용</p>
+      <div class="bars"><div class="bar-col"><div class="bar-track"><div class="bar-v" style="height:50%" title="7건"></div></div><div class="bar-n">7</div><div class="bar-x">26.05</div></div><div class="bar-col"><div class="bar-track"><div class="bar-v" style="height:100%" title="14건"></div></div><div class="bar-n">14</div><div class="bar-x">26.06</div></div><div class="bar-col"><div class="bar-track"><div class="bar-v" style="height:36%" title="5건"></div></div><div class="bar-n">5</div><div class="bar-x">26.07</div></div></div>
+    </section>
+  </div><!-- /page-analysis -->
+
+  <footer>평일 09:00 / 18:00 KST 자동 갱신 · 읽기 전용</footer>
+</div>
+<script>
+  (function () {
+    // top-nav view switch (공고 / 분석) — static page, so we just toggle sections.
+    // #분석 in the URL deep-links to analysis; default is 공고.
+    var navBtns = Array.prototype.slice.call(document.querySelectorAll(".navbtn"));
+    var pages = { grants: document.getElementById("page-grants"),
+                  news: document.getElementById("page-news"),
+                  events: document.getElementById("page-events"),
+                  recruit: document.getElementById("page-recruit"),
+                  analysis: document.getElementById("page-analysis") };
+    var HASH = { grants:"#공고", news:"#뉴스", events:"#행사", recruit:"#채용", analysis:"#분석" };
+    var FROM_HASH = { "#공고":"grants", "#뉴스":"news", "#행사":"events", "#채용":"recruit", "#분석":"analysis" };
+    function showPage(p) {
+      if (!pages[p]) p = "grants";
+      Object.keys(pages).forEach(function (k) { pages[k].hidden = (k !== p); });
+      navBtns.forEach(function (b) { b.setAttribute("aria-pressed", b.dataset.page === p); });
+      try { history.replaceState(null, "", HASH[p]); } catch (e) {}
+    }
+    navBtns.forEach(function (b) { b.addEventListener("click", function () { showPage(b.dataset.page); }); });
+    showPage(FROM_HASH[decodeURIComponent(location.hash)] || "grants");
+
+    // BRIC feed pages (뉴스/행사/채용): each is an independent 20-per-page list.
+    Array.prototype.slice.call(document.querySelectorAll(".feedpage")).forEach(function (pg) {
+      var tbody = pg.querySelector("tbody");
+      var rows = Array.prototype.slice.call(tbody.querySelectorAll("tr[data-posted]"));
+      if (!rows.length) return;  // empty-state row has no data-posted
+      var pager = pg.querySelector(".fpager"), info = pg.querySelector(".fpg-info"),
+          prev = pg.querySelector(".fpg-prev"), next = pg.querySelector(".fpg-next");
+      var PAGE = 20, page = 1;
+      function render() {
+        var total = rows.length, pgs = Math.max(1, Math.ceil(total / PAGE));
+        if (page > pgs) page = pgs; if (page < 1) page = 1;
+        var start = (page - 1) * PAGE;
+        rows.forEach(function (r, i) { r.style.display = (i >= start && i < start + PAGE) ? "" : "none"; });
+        if (pgs <= 1) { pager.style.display = "none"; return; }
+        pager.style.display = ""; info.textContent = page + " / " + pgs + " (" + total + "건)";
+        prev.disabled = page <= 1; next.disabled = page >= pgs;
+      }
+      prev.addEventListener("click", function () { page--; render(); });
+      next.addEventListener("click", function () { page++; render(); });
+      render();
+    });
+
+    // 채용 표: 필터(채용방식/채용형태/상태) + 3단계 정렬(게시일/마감일/남은기간:
+    // asc→desc→원래대로) + 페이징. 남은기간(D-N/D-DAY/마감)은 정적 페이지가 낡지
+    // 않도록 오늘 기준으로 클라이언트에서 계산.
+    (function () {
+      var page = document.getElementById("page-recruit");
+      if (!page) return;
+      var tbody = page.querySelector("tbody");
+      var allRows = Array.prototype.slice.call(tbody.querySelectorAll("tr[data-order]"));
+      if (!allRows.length) return;
+      var mSel = document.getElementById("rc-method"),
+          tSel = document.getElementById("rc-type"),
+          sSel = document.getElementById("rc-status");
+      var sortBtns = Array.prototype.slice.call(page.querySelectorAll(".rc-sort"));
+      var pager = page.querySelector(".fpager"), info = page.querySelector(".fpg-info"),
+          prev = page.querySelector(".fpg-prev"), next = page.querySelector(".fpg-next");
+      var PAGE = 20;
+
+      // per-row: compute 남은기간 + status once (today-based).
+      var now = new Date(), t0 = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      function toDate(n) { return new Date(Math.floor(n / 10000), (Math.floor(n / 100) % 100) - 1, n % 100); }
+      allRows.forEach(function (r) {
+        var dl = parseInt(r.getAttribute("data-deadline"), 10);
+        var cell = r.querySelector(".c-remain");
+        if (!dl) { r._days = null; r._status = "always"; cell.textContent = "–"; return; }
+        var d = Math.round((toDate(dl) - t0) / 86400000);
+        r._days = d;
+        if (d > 0) { r._status = "live"; cell.textContent = "D-" + d; }
+        else if (d === 0) { r._status = "dday"; cell.textContent = "D-DAY"; cell.classList.add("due-today"); }
+        else { r._status = "expired"; cell.textContent = "마감"; cell.classList.add("expired"); }
+      });
+
+      var st = { method: "", type: "", status: "", sort: "", dir: 1, page: 1 };
+      function num(r, a) { return parseInt(r.getAttribute(a), 10) || 0; }
+      function filtered() {
+        return allRows.filter(function (r) {
+          if (st.method && r.getAttribute("data-method") !== st.method) return false;
+          if (st.type && r.getAttribute("data-type") !== st.type) return false;
+          if (st.status && r._status !== st.status) return false;
+          return true;
+        });
+      }
+      function sortRows(rows) {
+        if (!st.sort) return rows.slice().sort(function (a, b) { return num(a, "data-order") - num(b, "data-order"); });
+        if (st.sort === "posted") {
+          return rows.slice().sort(function (a, b) { var d = num(a, "data-posted") - num(b, "data-posted"); return st.dir > 0 ? d : -d; });
+        }
+        // deadline / remain: by days-left; 상시(마감일 없음) always last
+        var withDl = [], noDl = [];
+        rows.forEach(function (r) { (r._days === null ? noDl : withDl).push(r); });
+        withDl.sort(function (a, b) { return st.dir > 0 ? a._days - b._days : b._days - a._days; });
+        return withDl.concat(noDl);
+      }
+      function render() {
+        var rows = sortRows(filtered());
+        var total = rows.length, pgs = Math.max(1, Math.ceil(total / PAGE));
+        if (st.page > pgs) st.page = pgs; if (st.page < 1) st.page = 1;
+        var start = (st.page - 1) * PAGE;
+        allRows.forEach(function (r) { r.style.display = "none"; });
+        rows.slice(start, start + PAGE).forEach(function (r) { r.style.display = ""; tbody.appendChild(r); });
+
+        var er = document.getElementById("rc-empty");
+        if (!total) {
+          if (!er) { er = document.createElement("tr"); er.id = "rc-empty"; er.innerHTML = '<td colspan="7" class="empty"></td>'; tbody.appendChild(er); }
+          er.querySelector("td").textContent = "해당 조건의 채용 공고가 없습니다.";
+          er.style.display = "";
+        } else if (er) { er.style.display = "none"; }
+
+        if (pgs <= 1) { pager.style.display = "none"; }
+        else { pager.style.display = ""; info.textContent = st.page + " / " + pgs + " (" + total + "건)"; prev.disabled = st.page <= 1; next.disabled = st.page >= pgs; }
+
+        sortBtns.forEach(function (b) {
+          var k = b.getAttribute("data-key"), active = st.sort === k;
+          var base = b.getAttribute("data-label");
+          if (!base) { base = b.textContent.replace(/[ ↑↓]+$/, ""); b.setAttribute("data-label", base); }
+          b.setAttribute("aria-pressed", active);
+          b.textContent = base + (active ? (st.dir > 0 ? " ↑" : " ↓") : "");
+        });
+      }
+      function onFilter() { st.page = 1; render(); }
+      mSel.addEventListener("change", function () { st.method = mSel.value; onFilter(); });
+      tSel.addEventListener("change", function () { st.type = tSel.value; onFilter(); });
+      sSel.addEventListener("change", function () { st.status = sSel.value; onFilter(); });
+      sortBtns.forEach(function (b) {
+        b.addEventListener("click", function () {
+          var k = b.getAttribute("data-key");
+          if (st.sort !== k) { st.sort = k; st.dir = 1; }      // asc
+          else if (st.dir > 0) { st.dir = -1; }                // desc
+          else { st.sort = ""; }                               // 원래대로
+          st.page = 1; render();
+        });
+      });
+      prev.addEventListener("click", function () { st.page--; render(); });
+      next.addEventListener("click", function () { st.page++; render(); });
+      render();
+    })();
+
+    // countdown — the next scheduled run (weekdays 09:00/18:00 KST) is computed
+    // on the CLIENT, so it stays live regardless of when this page was generated
+    // or whether the scheduled run was delayed. Never freezes at 00:00.
+    var cd = document.getElementById("cd"), nextEl = document.getElementById("next");
+    var KSTOFF = 9 * 3600000, RUN_HOURS = [9, 18];
+    function pad(n) { return (n < 10 ? "0" : "") + n; }
+    function nextRun(nowMs) {
+      for (var i = 0; i < 8; i++) {
+        var kst = new Date(nowMs + i * 86400000 + KSTOFF);  // shift so getUTC* reads KST
+        var dow = kst.getUTCDay();
+        if (dow === 0 || dow === 6) continue;               // skip Sat/Sun
+        for (var j = 0; j < RUN_HOURS.length; j++) {
+          var cand = Date.UTC(kst.getUTCFullYear(), kst.getUTCMonth(), kst.getUTCDate(), RUN_HOURS[j]) - KSTOFF;
+          if (cand > nowMs) return cand;
+        }
+      }
+      return nowMs;
+    }
+    function fmtKst(ms) {
+      var d = new Date(ms + KSTOFF);
+      return pad(d.getUTCMonth() + 1) + "/" + pad(d.getUTCDate()) + " " + pad(d.getUTCHours()) + ":" + pad(d.getUTCMinutes());
+    }
+    var target = nextRun(Date.now());
+    if (nextEl) nextEl.textContent = fmtKst(target);
+    function tick() {
+      var now = Date.now();
+      if (target - now <= 0) { target = nextRun(now); if (nextEl) nextEl.textContent = fmtKst(target); }
+      var s = Math.floor((target - now) / 1000);
+      var h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60);
+      cd.textContent = (h > 0 ? h + "시간 " : "") + pad(m) + ":" + pad(s % 60);
+    }
+    tick(); setInterval(tick, 1000);
+
+    // table: two tabs (지원 가능 / 지난), per-tab sort, 20-per-page pagination.
+    // Past vs upcoming is decided on the CLIENT against today, so it stays correct
+    // between cron runs no matter when the page was generated.
+    var tbody = document.getElementById("rows");
+    var allRows = Array.prototype.slice.call(tbody.querySelectorAll("tr[data-seen]"));
+    var sortBtns = Array.prototype.slice.call(document.querySelectorAll(".sortbtn"));
+    var tabBtns  = Array.prototype.slice.call(document.querySelectorAll(".tabbtn"));
+    var pager = document.getElementById("pager"),
+        pgPrev = document.getElementById("pg-prev"),
+        pgNext = document.getElementById("pg-next"),
+        pgInfo = document.getElementById("pg-info");
+    var PAGE = 20;
+    function num(v) { return v ? parseInt(v, 10) : 0; }
+    function todayNum() { var d = new Date(); return d.getFullYear()*10000 + (d.getMonth()+1)*100 + d.getDate(); }
+    var TODAY = todayNum();
+
+    // classify: past = has a deadline that already passed. no-deadline stays 지원 가능.
+    allRows.forEach(function (r) {
+      var d = num(r.dataset.deadline);
+      r._past = (d && d < TODAY) ? 1 : 0;
+      if (r._past) r.classList.add("past");
+    });
+    function tabRows(tab) {
+      return allRows.filter(function (r) { return tab === "past" ? r._past : !r._past; });
+    }
+    document.getElementById("cnt-upcoming").textContent = tabRows("upcoming").length;
+    document.getElementById("cnt-past").textContent = tabRows("past").length;
+
+    var sorters = {
+      // within a single tab this yields: 지원가능 → 가까운 마감 먼저; 지난 → 최근 마감 먼저
+      deadline: function (a, b) {
+        function key(x) { if (!x) return [2, 0]; return x >= TODAY ? [0, x] : [1, -x]; }
+        var ka = key(num(a.dataset.deadline)), kb = key(num(b.dataset.deadline));
+        return ka[0] - kb[0] || ka[1] - kb[1];
+      },
+      posted: function (a, b) { return num(b.dataset.posted) - num(a.dataset.posted); },
+      seen:   function (a, b) { return num(b.dataset.seen) - num(a.dataset.seen); }
+    };
+
+    var state = { tab: "upcoming", sort: "deadline", page: 1 };
+
+    function render() {
+      var rows = tabRows(state.tab).slice().sort(sorters[state.sort]);
+      var total = rows.length;
+      var pages = Math.max(1, Math.ceil(total / PAGE));
+      if (state.page > pages) state.page = pages;
+      if (state.page < 1) state.page = 1;
+      var start = (state.page - 1) * PAGE;
+      var view = rows.slice(start, start + PAGE);
+
+      allRows.forEach(function (r) { r.style.display = "none"; });
+      view.forEach(function (r) { r.style.display = ""; tbody.appendChild(r); });
+
+      var emptyRow = document.getElementById("empty-row");
+      if (!total) {
+        if (!emptyRow) {
+          emptyRow = document.createElement("tr");
+          emptyRow.id = "empty-row";
+          emptyRow.innerHTML = '<td colspan="3" class="empty"></td>';
+          tbody.appendChild(emptyRow);
+        }
+        emptyRow.querySelector("td").textContent =
+          allRows.length ? "해당 탭에 공고가 없습니다." : "아직 수집된 공고가 없습니다. 다음 실행 후 채워집니다.";
+        emptyRow.style.display = "";
+      } else if (emptyRow) {
+        emptyRow.style.display = "none";
+      }
+
+      if (pages <= 1) {
+        pager.style.display = "none";
+      } else {
+        pager.style.display = "";
+        pgInfo.textContent = state.page + " / " + pages + " (" + total + "건)";
+        pgPrev.disabled = state.page <= 1;
+        pgNext.disabled = state.page >= pages;
+      }
+
+      tabBtns.forEach(function (b) { b.setAttribute("aria-pressed", b.dataset.tab === state.tab); });
+      sortBtns.forEach(function (b) { b.setAttribute("aria-pressed", b.dataset.sort === state.sort); });
+    }
+
+    tabBtns.forEach(function (b) { b.addEventListener("click", function () {
+      if (state.tab === b.dataset.tab) return;
+      state.tab = b.dataset.tab; state.page = 1; render();
+    }); });
+    sortBtns.forEach(function (b) { b.addEventListener("click", function () {
+      state.sort = b.dataset.sort; state.page = 1; render();
+    }); });
+    pgPrev.addEventListener("click", function () { state.page--; render(); });
+    pgNext.addEventListener("click", function () { state.page++; render(); });
+    render();
+
+    // keyword show-more: reveal toggle only when the chip box overflows
+    var toggles = Array.prototype.slice.call(document.querySelectorAll(".kw-toggle"));
+    toggles.forEach(function (btn) {
+      var box = document.getElementById(btn.dataset.target);
+      if (box.scrollHeight > box.clientHeight + 2) { btn.hidden = false; }
+      btn.addEventListener("click", function () {
+        var expanded = box.classList.toggle("expanded");
+        btn.textContent = expanded ? "접기" : "전체 보기";
+      });
+    });
+  })();
+</script></body></html>
